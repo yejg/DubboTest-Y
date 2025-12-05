@@ -3,8 +3,10 @@ package com.yanglx.dubbo.test.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.components.JBPanel;
+import com.intellij.ui.components.JBTextField;
 import com.yanglx.dubbo.test.CacheInfo;
 import com.yanglx.dubbo.test.DubboSetingState;
+import com.yanglx.dubbo.test.DubboTestBundle;
 import com.yanglx.dubbo.test.dubbo.DubboApiLocator;
 import com.yanglx.dubbo.test.dubbo.DubboMethodEntity;
 import com.yanglx.dubbo.test.utils.JsonUtils;
@@ -12,405 +14,394 @@ import com.yanglx.dubbo.test.utils.PluginUtils;
 import com.yanglx.dubbo.test.utils.StrUtils;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-/**
- * <p>Description: </p>
- *
- * @author yanglx
- * @version 1.0.0
- * @email "mailto:dev_ylx@163.com"
- * @date 2021.02.20 15:57
- * @since 1.0.0
- */
 public class DubboPanel extends JBPanel {
-
     private static final long serialVersionUID = -8541227582365214834L;
-    /**
-     * Main panel
-     */
+
     private JPanel mainPanel;
-    /**
-     * Button 1
-     */
     private JButton invokeBtn;
-    /**
-     * Interface name text field
-     */
     private JTextField interfaceNameTextField;
-    /** Req pane */
-//    private JPanel reqPane;
-    /** Resp pane */
-//    private JPanel respPane;
-    /**
-     * Tip
-     */
     private JLabel tip;
-    /**
-     * Save btn
-     */
     private JButton saveAsBtn;
-    /**
-     * Address box
-     */
     private JComboBox<CacheInfo> addressBox;
-    /**
-     * Method name text field
-     */
     private JTextField methodNameTextField;
-    /**
-     * Version text field
-     */
     private JTextField versionTextField;
-    /**
-     * group text field
-     */
     private JTextField groupTextField;
     private JButton saveBtn;
     private JPanel editorPane;
-    /**
-     * Json editor req
-     */
     private JsonEditor jsonEditorReq;
-    /**
-     * Json editor resp
-     */
     private JsonEditor jsonEditorResp;
-    /**
-     * My project
-     */
     private Project project;
-
-    /**
-     * Dubbo method entity
-     */
     private final DubboMethodEntity dubboMethodEntity = new DubboMethodEntity();
+    private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-    public JPanel getMainPanel() {
-        return mainPanel;
+    public DubboPanel(Project project, TreePanel leftTree) {
+        this.project = project;
+        this.setLayout(new BorderLayout());
+        initComponents();
+        this.add(mainPanel, BorderLayout.CENTER);
+        initEventListeners(leftTree);
+        reset();
     }
 
-    public void setMainPanel(JPanel mainPanel) {
-        this.mainPanel = mainPanel;
+    // 初始化组件。DubboPanel.form极其不稳定，只好手动绘制UI
+    private void initComponents() {
+        // 主面板
+        mainPanel = new JPanel(new BorderLayout(5, 5));
+        mainPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+        // 1. 顶部表单区域
+        JPanel topFormPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 5, 2, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // 1.1 Address行
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.address")), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.gridwidth = 3;
+        gbc.weightx = 1;
+        addressBox = new JComboBox<>();
+        topFormPanel.add(addressBox, gbc);
+
+        // 1.2 version行
+        gbc.gridx = 4;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.version")), gbc);
+
+        gbc.gridx = 5;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.5;
+        versionTextField = new JBTextField();
+        topFormPanel.add(versionTextField, gbc);
+
+        // 1.3 group行
+        gbc.gridx = 6;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.group")), gbc);
+
+        gbc.gridx = 7;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.5;
+        groupTextField = new JBTextField();
+        topFormPanel.add(groupTextField, gbc);
+
+        // 1.4 保存按钮
+        gbc.gridx = 8;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        saveBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.save"));
+        topFormPanel.add(saveBtn, gbc);
+
+        // 1.5 另存为 按钮
+        gbc.gridx = 9;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        saveAsBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.save-as"));
+        topFormPanel.add(saveAsBtn, gbc);
+
+        // 2 InterfaceName行
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.interface-name")), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.gridwidth = 9;
+        gbc.weightx = 1;
+        interfaceNameTextField = new JBTextField();
+        topFormPanel.add(interfaceNameTextField, gbc);
+
+        // 3 MethodName行
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.method-name")), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.gridwidth = 9;
+        gbc.weightx = 1;
+        methodNameTextField = new JBTextField();
+        topFormPanel.add(methodNameTextField, gbc);
+
+        mainPanel.add(topFormPanel, BorderLayout.NORTH);
+
+        // 4 中间编辑区（Params和Response）
+        editorPane = new JPanel(new BorderLayout());
+
+        JBSplitter splitter = new JBSplitter();
+        splitter.setProportion(0.5f);
+
+        // 4.1 Params编辑器
+        jsonEditorReq = new JsonEditor(project);
+        jsonEditorReq.setBorder(BorderFactory.createTitledBorder(DubboTestBundle.message("dubbo-test.tool.params")));
+        PluginUtils.writeDocument(project, jsonEditorReq.getDocument(), "{}");
+
+        // 4.2 Response编辑器
+        jsonEditorResp = new JsonEditor(project);
+        jsonEditorResp.setBorder(BorderFactory.createTitledBorder(DubboTestBundle.message("dubbo-test.tool.response")));
+        PluginUtils.writeDocument(project, jsonEditorResp.getDocument(), "{}");
+
+        splitter.setFirstComponent(jsonEditorReq);
+        splitter.setSecondComponent(jsonEditorResp);
+        editorPane.add(splitter, BorderLayout.CENTER);
+
+        mainPanel.add(editorPane, BorderLayout.CENTER);
+
+        // 5 底部状态栏
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        tip = new JLabel("time:0");
+        tip.setBorder(new EmptyBorder(2, 5, 2, 5));
+
+        invokeBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.run"));
+        bottomPanel.add(tip, BorderLayout.WEST);
+        bottomPanel.add(invokeBtn, BorderLayout.EAST);
+
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    // 事件监听初始化
+    private void initEventListeners(TreePanel leftTree) {
+        invokeBtn.addActionListener(e -> {
+            refreshDubboMethodEntity();
+            if (isBlankEntity()) return;
+
+            DubboSetingState.getInstance().add(
+                    CacheInfo.of(UUID.randomUUID().toString(),
+                            dubboMethodEntity.getMethodName() + "#" + dubboMethodEntity.getInterfaceName(),
+                            dubboMethodEntity),
+                    DubboSetingState.CacheType.HISTORY
+            );
+            leftTree.refresh();
+
+            PluginUtils.writeDocument(project, jsonEditorResp.getDocument(), "");
+
+            // 异步调用Dubbo
+            Future<Object> submit = executorService.submit(() ->
+                    new DubboApiLocator().invoke(dubboMethodEntity)
+            );
+
+            // 处理响应结果
+            executorService.submit(() -> {
+                long start = System.currentTimeMillis();
+                try {
+                    Object result = submit.get(10, TimeUnit.SECONDS);
+                    PluginUtils.writeDocument(
+                            project,
+                            jsonEditorResp.getDocument(),
+                            JsonUtils.toPrettyJSONString(result)
+                    );
+                    tip.setText("time:" + (System.currentTimeMillis() - start));
+                } catch (Exception ex) {
+                    String error = ex.getMessage() != null ? ex.getMessage() : ex.toString();
+                    PluginUtils.writeDocument(project, jsonEditorResp.getDocument(), error);
+                    tip.setText("time:" + (System.currentTimeMillis() - start) + " (error)");
+                }
+            });
+        });
+
+        saveBtn.addActionListener(e -> {
+            refreshDubboMethodEntity();
+            if (isBlankEntity()) return;
+
+            String name = dubboMethodEntity.getMethodName() + "#" + dubboMethodEntity.getInterfaceName();
+            String id = StrUtils.isBlank(dubboMethodEntity.getId()) ?
+                    UUID.randomUUID().toString() : dubboMethodEntity.getId();
+            DubboSetingState.getInstance().add(
+                    CacheInfo.of(id, name, dubboMethodEntity),
+                    DubboSetingState.CacheType.COLLECTIONS
+            );
+            leftTree.refresh();
+        });
+
+        saveAsBtn.addActionListener(e -> {
+            refreshDubboMethodEntity();
+            if (isBlankEntity()) return;
+
+            NameDialogue dialogue = new NameDialogue(project);
+            if (dialogue.showAndGet()) {
+                String name = dialogue.getText();
+                if (StrUtils.isBlank(name)) {
+                    name = dubboMethodEntity.getInterfaceName() + "#" + dubboMethodEntity.getMethodName();
+                }
+                String id = StrUtils.isBlank(dubboMethodEntity.getId()) ?
+                        UUID.randomUUID().toString() : dubboMethodEntity.getId();
+                DubboSetingState.getInstance().add(
+                        CacheInfo.of(id, name, dubboMethodEntity),
+                        DubboSetingState.CacheType.COLLECTIONS
+                );
+                leftTree.refresh();
+            }
+        });
+
+        // 地址下拉框事件
+        addressBox.addItemListener(e -> {
+            CacheInfo item = (CacheInfo) e.getItem();
+            if (item != null) {
+                versionTextField.setText(item.getVersion());
+                groupTextField.setText(item.getGroup());
+            }
+        });
+    }
+
+    public void refreshDubboMethodEntity() {
+        dubboMethodEntity.setMethodName(methodNameTextField.getText());
+        dubboMethodEntity.setInterfaceName(interfaceNameTextField.getText());
+
+        CacheInfo selectedItem = (CacheInfo) addressBox.getSelectedItem();
+        if (selectedItem != null) {
+            dubboMethodEntity.setAddress(selectedItem.getAddress());
+        }
+        dubboMethodEntity.setVersion(versionTextField.getText());
+        dubboMethodEntity.setGroup(groupTextField.getText());
+
+        try {
+            String reqText = jsonEditorReq.getDocumentText();
+            if (StrUtils.isNotBlank(reqText)) {
+                DubboMethodEntity temp = JsonUtils.toJava(reqText, DubboMethodEntity.class);
+                dubboMethodEntity.setMethodType(temp.getMethodType());
+                dubboMethodEntity.setParam(temp.getParam());
+            } else {
+                dubboMethodEntity.setParam(new Object[]{});
+                dubboMethodEntity.setMethodType(new String[]{});
+            }
+        } catch (Exception e) {
+            dubboMethodEntity.setParam(new Object[]{});
+            dubboMethodEntity.setMethodType(new String[]{});
+        }
+    }
+
+    public static void refreshUI(DubboPanel dubboPanel, DubboMethodEntity dubboMethodEntity) {
+        dubboPanel.dubboMethodEntity.setId(dubboMethodEntity.getId());
+        dubboPanel.interfaceNameTextField.setText(dubboMethodEntity.getInterfaceName());
+        dubboPanel.methodNameTextField.setText(dubboMethodEntity.getMethodName());
+        dubboPanel.versionTextField.setText(dubboMethodEntity.getVersion());
+        dubboPanel.groupTextField.setText(dubboMethodEntity.getGroup());
+
+        // 选择地址
+        JComboBox<CacheInfo> addressBox = dubboPanel.addressBox;
+        for (int i = 0; i < addressBox.getItemCount(); i++) {
+            CacheInfo item = addressBox.getItemAt(i);
+            String itemKey = item.getAddress() + item.getVersion() + item.getGroup();
+            String targetKey = dubboMethodEntity.getAddress() + dubboMethodEntity.getVersion() + dubboMethodEntity.getGroup();
+            if (itemKey.equals(targetKey)) {
+                addressBox.setSelectedIndex(i);
+                break;
+            }
+        }
+
+        // 设置请求参数
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("param", dubboMethodEntity.getParam());
+        paramMap.put("methodType", dubboMethodEntity.getMethodType());
+        PluginUtils.writeDocument(
+                dubboPanel.project,
+                dubboPanel.jsonEditorReq.getDocument(),
+                JsonUtils.toPrettyJSONString(paramMap)
+        );
+        dubboPanel.updateUI();
+    }
+
+    public void reset() {
+        addressBox.removeAllItems();
+        List<CacheInfo> configs = DubboSetingState.getInstance().getDubboConfigs();
+        for (CacheInfo config : configs) {
+            addressBox.addItem(config);
+        }
+    }
+
+    private boolean isBlankEntity() {
+        return StrUtils.isBlank(dubboMethodEntity.getMethodName())
+                || StrUtils.isBlank(dubboMethodEntity.getInterfaceName());
+    }
+
+    // Getter方法保持不变
+    public JPanel getMainPanel() {
+        return mainPanel;
     }
 
     public JButton getInvokeBtn() {
         return invokeBtn;
     }
 
-    public void setInvokeBtn(JButton invokeBtn) {
-        this.invokeBtn = invokeBtn;
-    }
-
     public JTextField getInterfaceNameTextField() {
         return interfaceNameTextField;
-    }
-
-    public void setInterfaceNameTextField(JTextField interfaceNameTextField) {
-        this.interfaceNameTextField = interfaceNameTextField;
     }
 
     public JLabel getTip() {
         return tip;
     }
 
-    public void setTip(JLabel tip) {
-        this.tip = tip;
-    }
-
     public JButton getSaveAsBtn() {
         return saveAsBtn;
-    }
-
-    public void setSaveAsBtn(JButton saveAsBtn) {
-        this.saveAsBtn = saveAsBtn;
     }
 
     public JComboBox<CacheInfo> getAddressBox() {
         return addressBox;
     }
 
-    public void setAddressBox(JComboBox<CacheInfo> addressBox) {
-        this.addressBox = addressBox;
-    }
-
     public JTextField getMethodNameTextField() {
         return methodNameTextField;
-    }
-
-    public void setMethodNameTextField(JTextField methodNameTextField) {
-        this.methodNameTextField = methodNameTextField;
     }
 
     public JTextField getVersionTextField() {
         return versionTextField;
     }
 
-    public void setVersionTextField(JTextField versionTextField) {
-        this.versionTextField = versionTextField;
-    }
-
     public JTextField getGroupTextField() {
         return groupTextField;
-    }
-
-    public void setGroupTextField(JTextField groupTextField) {
-        this.groupTextField = groupTextField;
     }
 
     public JButton getSaveBtn() {
         return saveBtn;
     }
 
-    public void setSaveBtn(JButton saveBtn) {
-        this.saveBtn = saveBtn;
-    }
-
     public JPanel getEditorPane() {
         return editorPane;
-    }
-
-    public void setEditorPane(JPanel editorPane) {
-        this.editorPane = editorPane;
     }
 
     public JsonEditor getJsonEditorReq() {
         return jsonEditorReq;
     }
 
-    public void setJsonEditorReq(JsonEditor jsonEditorReq) {
-        this.jsonEditorReq = jsonEditorReq;
-    }
-
     public JsonEditor getJsonEditorResp() {
         return jsonEditorResp;
-    }
-
-    public void setJsonEditorResp(JsonEditor jsonEditorResp) {
-        this.jsonEditorResp = jsonEditorResp;
     }
 
     public Project getProject() {
         return project;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
-    }
-
     public DubboMethodEntity getDubboMethodEntity() {
         return dubboMethodEntity;
-    }
-
-    private ExecutorService executorService = Executors.newFixedThreadPool(2);
-    /**
-     * Dubbo panel
-     *
-     * @param project project
-     * @since 1.0.0
-     */
-    public DubboPanel(Project project, TreePanel leftTree) {
-
-        this.project = project;
-        this.setLayout(new BorderLayout());
-        this.add(this.mainPanel, BorderLayout.CENTER);
-
-        //分割线
-        JBSplitter mContentSplitter = new JBSplitter();
-        mContentSplitter.setProportion(0.5f);
-        this.jsonEditorReq = new JsonEditor(project);
-        this.jsonEditorReq.setBorder(BorderFactory.createTitledBorder("Params"));
-        this.jsonEditorResp = new JsonEditor(project);
-        this.jsonEditorResp.setBorder(BorderFactory.createTitledBorder("Response"));
-        mContentSplitter.setFirstComponent(jsonEditorReq);
-        mContentSplitter.setSecondComponent(jsonEditorResp);
-        this.editorPane.add(mContentSplitter, BorderLayout.CENTER);
-
-        //初始化数据
-        this.reset();
-
-        //给定一个收藏名称进行收藏
-        this.saveAsBtn.addActionListener(e -> {
-            DubboSetingState instance = DubboSetingState.getInstance();
-            this.refreshDubboMethodEntity();
-            if (isBlankEntity()) {
-                return;
-            }
-            NameDialogue dialogue = new NameDialogue(project);
-            dialogue.show();
-            if (dialogue.isOK()) {
-                String name = dialogue.getText();
-                if (StrUtils.isBlank(name)) {
-                    name = this.dubboMethodEntity.getInterfaceName() + "#" + this.dubboMethodEntity.getMethodName();
-                }
-                String id = StrUtils.isBlank(this.dubboMethodEntity.getId()) ? UUID.randomUUID().toString() : this.dubboMethodEntity.getId();
-                CacheInfo of = CacheInfo.of(id, name, this.dubboMethodEntity);
-                instance.add(of, DubboSetingState.CacheType.COLLECTIONS);
-                //刷新左边树结构
-                leftTree.refresh();
-            }
-        });
-        //默认使用接口名和方法名作为收藏名进行收藏
-        saveBtn.addActionListener(e -> {
-            DubboSetingState instance = DubboSetingState.getInstance();
-            this.refreshDubboMethodEntity();
-            if (isBlankEntity()) {
-                return;
-            }
-            String name = this.dubboMethodEntity.getMethodName() + "#" + this.dubboMethodEntity.getInterfaceName();
-            String id = StrUtils.isBlank(this.dubboMethodEntity.getId()) ? UUID.randomUUID().toString() : this.dubboMethodEntity.getId();
-            CacheInfo of = CacheInfo.of(id, name, this.dubboMethodEntity);
-            instance.add(of, DubboSetingState.CacheType.COLLECTIONS);
-            //刷新左边树结构
-            leftTree.refresh();
-        });
-
-        //执行dubbo请求
-        this.invokeBtn.addActionListener(e -> {
-            this.refreshDubboMethodEntity();
-            if (isBlankEntity()) {
-                return;
-            }
-            //添加历史
-            DubboSetingState instance = DubboSetingState.getInstance();
-            String id = UUID.randomUUID().toString();
-            String name = this.dubboMethodEntity.getMethodName() + "#" + this.dubboMethodEntity.getInterfaceName();
-            CacheInfo of = CacheInfo.of(id, name, this.dubboMethodEntity);
-            instance.add(of, DubboSetingState.CacheType.HISTORY);
-            //刷新左边树结构
-            leftTree.refresh();
-            //清空数据
-            PluginUtils.writeDocument(this.project, this.jsonEditorResp.getDocument(), "");
-            //异步处理
-            Future<Object> submit = executorService.submit(() -> {
-                DubboApiLocator dubboApiLocator = new DubboApiLocator();
-                Object invoke = dubboApiLocator.invoke(dubboMethodEntity);
-                return invoke;
-            });
-            //异步获取返回值，设置超时时间
-            executorService.submit(() -> {
-                tip.setText("Requesting...");
-                tip.updateUI();
-                long start = System.currentTimeMillis();
-                try {
-                    Object invoke = submit.get(10, TimeUnit.SECONDS);
-
-                    PluginUtils.writeDocument(this.project,
-                            this.jsonEditorResp.getDocument(),
-                            JsonUtils.toPrettyJSONString(invoke));
-
-                    long end = System.currentTimeMillis();
-                    this.tip.setText("time:" + (end - start));
-                    this.tip.updateUI();
-                } catch (TimeoutException timeoutException) {
-//                    DubboPanel.this.tip.setText(DubboTestBundle.message("dubbo-test.invoke.timeout.tootip"));
-                    tip.setText("Timeout...");
-                    tip.updateUI();
-                    submit.cancel(true);
-                } catch (ExecutionException | InterruptedException exception) {
-                    String replaceAll = exception.getLocalizedMessage().replaceAll("\r\n", "\n");
-                    PluginUtils.writeDocument(this.project,
-                            this.jsonEditorResp.getDocument(),
-                            replaceAll);
-                }
-            });
-
-
-        });
-
-        //下拉
-        addressBox.addItemListener(e -> {
-            CacheInfo item = (CacheInfo) e.getItem();
-            versionTextField.setText(item.getVersion());
-            groupTextField.setText(item.getGroup());
-        });
-    }
-
-    /**
-     * Refresh dubbo method entity
-     *
-     * @since 1.0.0
-     */
-    public void refreshDubboMethodEntity() {
-        JTextField interfaceName = this.getInterfaceNameTextField();
-        JTextField methodName = this.getMethodNameTextField();
-        JTextField versionTextField = this.getVersionTextField();
-        JTextField groupTextField = this.getGroupTextField();
-        JComboBox<CacheInfo> addressBox = this.getAddressBox();
-        JsonEditor jsonEditorReq = this.getJsonEditorReq();
-        this.dubboMethodEntity.setMethodName(methodName.getText());
-        this.dubboMethodEntity.setInterfaceName(interfaceName.getText());
-        CacheInfo selectedItem = (CacheInfo) addressBox.getSelectedItem();
-        this.dubboMethodEntity.setAddress(selectedItem.getAddress());
-        this.dubboMethodEntity.setVersion(versionTextField.getText());
-        this.dubboMethodEntity.setGroup(groupTextField.getText());
-        if (jsonEditorReq.getDocumentText() != null
-                && jsonEditorReq.getDocumentText().length() > 0) {
-            DubboMethodEntity dubboMethodEntity = JsonUtils.toJava(jsonEditorReq.getDocumentText(), DubboMethodEntity.class);
-            this.dubboMethodEntity.setMethodType(dubboMethodEntity.getMethodType());
-            this.dubboMethodEntity.setParam(dubboMethodEntity.getParam());
-        } else {
-            this.dubboMethodEntity.setParam(new Object[]{});
-            this.dubboMethodEntity.setMethodType(new String[]{});
-        }
-    }
-
-    /**
-     * 刷新UI
-     *
-     * @param dubboPanel        dubbo panel
-     * @param dubboMethodEntity dubbo method entity
-     * @since 1.0.0
-     */
-    public static void refreshUI(DubboPanel dubboPanel, DubboMethodEntity dubboMethodEntity) {
-        dubboPanel.dubboMethodEntity.setId(dubboMethodEntity.getId());
-        JTextField textField1 = dubboPanel.getInterfaceNameTextField();
-        JTextField textField2 = dubboPanel.getMethodNameTextField();
-        JsonEditor jsonEditorReq = dubboPanel.getJsonEditorReq();
-        textField1.setText(dubboMethodEntity.getInterfaceName());
-        textField2.setText(dubboMethodEntity.getMethodName());
-
-        JComboBox<CacheInfo> textField3 = dubboPanel.getAddressBox();
-        for (int i = 0; i < textField3.getItemCount(); i++) {
-            CacheInfo itemAt = textField3.getItemAt(i);
-            String item = itemAt.getAddress() + itemAt.getVersion() + itemAt.getGroup();
-            String item1 = dubboMethodEntity.getAddress() + dubboMethodEntity.getVersion() + dubboMethodEntity.getGroup();
-            if (item.equals(item1)) {
-                textField3.setSelectedIndex(i);
-            }
-        }
-
-        JTextField textField4 = dubboPanel.getGroupTextField();
-        textField4.setText(dubboMethodEntity.getGroup());
-        JTextField textField5 = dubboPanel.getVersionTextField();
-        textField5.setText(dubboMethodEntity.getVersion());
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("param", dubboMethodEntity.getParam());
-        map.put("methodType", dubboMethodEntity.getMethodType());
-
-        PluginUtils.writeDocument(dubboPanel.getProject(),
-                jsonEditorReq.getDocument(),
-                JsonUtils.toPrettyJSONString(map));
-        dubboPanel.updateUI();
-    }
-
-    public void reset() {
-        DubboSetingState settings = DubboSetingState.getInstance();
-        List<CacheInfo> dubboConfigs = settings.getDubboConfigs();
-        this.addressBox.removeAllItems();
-        for (CacheInfo dubboConfig : dubboConfigs) {
-            this.addressBox.addItem(dubboConfig);
-        }
-    }
-
-    private boolean isBlankEntity() {
-        return StrUtils.isBlank(dubboMethodEntity.getMethodName())
-                || StrUtils.isBlank(this.dubboMethodEntity.getInterfaceName());
     }
 }
