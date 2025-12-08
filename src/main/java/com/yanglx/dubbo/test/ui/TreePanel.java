@@ -38,6 +38,7 @@ public class TreePanel extends JPanel {
     public TreePanel(TreeNodeTypeEnum treeNodeTypeEnum) {
         this.nowTreeNodeTypeEnum = treeNodeTypeEnum;
         tree = new Tree();
+        tree.getSelectionModel().setSelectionMode(javax.swing.tree.TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);// 支持多选
         this.treeMouseAdapter = createTreeMouseAdapter();
         JBScrollPane jScrollBar = new JBScrollPane(tree);
         this.setLayout(new BorderLayout());
@@ -135,14 +136,13 @@ public class TreePanel extends JPanel {
      */
     private void handleRightClick(MouseEvent e) {
         // LOGGER.info("鼠标右键事件");
-
         int x = e.getX();
         int y = e.getY();
-        TreePath pathForLocation = tree.getPathForLocation(x, y);
-        if (pathForLocation == null) {
-            return;
-        }
-        tree.setSelectionPath(pathForLocation);
+        // TreePath pathForLocation = tree.getPathForLocation(x, y);// 根据鼠标点击的坐标 (x, y) 获取对应位置的树节点路径
+        // if (pathForLocation == null) {
+        //     return;
+        // }
+        // tree.setSelectionPath(pathForLocation);// 这行代码会将该节点设为唯一选中节点，覆盖了之前选中的多个节点
         JPopupMenu menu = createPopupMenu();
         menu.show(tree, x, y);
     }
@@ -150,22 +150,7 @@ public class TreePanel extends JPanel {
     private JPopupMenu createPopupMenu() {
         JPopupMenu menu = new JPopupMenu();
         JMenuItem menuItem = new JMenuItem(DubboTestBundle.message("dubbo-test.tool.delete"));
-        menuItem.addActionListener(actionEvent -> {
-            Object nodeObj = tree.getLastSelectedPathComponent();
-            if (!(nodeObj instanceof DefaultMutableTreeNode)) {
-                return;
-            }
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) nodeObj;
-            Object userObject = selectedNode.getUserObject();
-            if (userObject instanceof CacheInfo) {
-                CacheInfo cacheInfo = (CacheInfo) userObject;
-                DubboSetingState.CacheType type = TreeNodeTypeEnum.COLLECTIONS.equals(nowTreeNodeTypeEnum)
-                        ? DubboSetingState.CacheType.COLLECTIONS
-                        : DubboSetingState.CacheType.HISTORY;
-                DubboSetingState.getInstance().remove(cacheInfo, type);
-                refresh();
-            }
-        });
+        menuItem.addActionListener(actionEvent -> deleteSelectedNodes());
         menu.add(menuItem);
 
         if (TreeNodeTypeEnum.HISTORY.equals(nowTreeNodeTypeEnum)) {
@@ -177,6 +162,33 @@ public class TreePanel extends JPanel {
             menu.add(menuItemAll);
         }
         return menu;
+    }
+
+    private void deleteSelectedNodes() {
+        Object[] selectedNodes = tree.getSelectionPaths();
+        if (selectedNodes == null || selectedNodes.length == 0) {
+            return;
+        }
+
+        DubboSetingState.CacheType type = TreeNodeTypeEnum.COLLECTIONS.equals(nowTreeNodeTypeEnum)
+                ? DubboSetingState.CacheType.COLLECTIONS
+                : DubboSetingState.CacheType.HISTORY;
+
+        for (Object pathObj : selectedNodes) {
+            if (pathObj instanceof TreePath) {
+                TreePath path = (TreePath) pathObj;
+                Object lastPathComponent = path.getLastPathComponent();
+                if (lastPathComponent instanceof DefaultMutableTreeNode) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) lastPathComponent;
+                    Object userObject = node.getUserObject();
+                    if (userObject instanceof CacheInfo) {
+                        CacheInfo cacheInfo = (CacheInfo) userObject;
+                        DubboSetingState.getInstance().remove(cacheInfo, type);
+                    }
+                }
+            }
+        }
+        refresh();
     }
 
     /**
