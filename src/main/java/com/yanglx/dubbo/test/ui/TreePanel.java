@@ -97,11 +97,17 @@ public class TreePanel extends JPanel {
             if (userObject instanceof CacheInfo) {
                 CacheInfo cacheInfo = (CacheInfo) userObject;
                 DubboMethodEntity dubboMethodEntity = cacheInfo.getDubboMethodEntity();
-                TabInfo selectedInfo = TabBar.getSelectionTabInfo();
-                if (selectedInfo != null) {
-                    Tab component = (Tab) selectedInfo.getComponent();
-                    DubboPanel.refreshUI(component.getDubboPanel(), dubboMethodEntity);
+                if (TabBar.activeTabId != null && !TabBar.activeTabId.equals(cacheInfo.getId())) {
+                    TabInfo tabInfo = tabBar.getTabInfo(cacheInfo.getId());
+                    if (tabInfo != null) {
+                        tabBar.select(tabInfo, false); // 切换tab
+                    }
                 }
+                // TabInfo selectedInfo = TabBar.getSelectionTabInfo();
+                // if (selectedInfo != null) {
+                //     Tab component = (Tab) selectedInfo.getComponent();
+                //     DubboPanel.refreshUI(component.getDubboPanel(), dubboMethodEntity);
+                // }
             }
         });
     }
@@ -152,7 +158,9 @@ public class TreePanel extends JPanel {
                     }
                     Object userObject = lastSelectedPathComponent.getUserObject();
                     if (userObject instanceof CacheInfo) {
-                        tabBar.addTab("" + e.getID() + e.getWhen());
+                        CacheInfo cacheInfo = (CacheInfo) userObject;
+                        // tabBar.addTab("" + e.getID() + e.getWhen());
+                        tabBar.addTab(cacheInfo.getId());
                         Tab component = (Tab) TabBar.getSelectionTabInfo().getComponent();
                         DubboMethodEntity dubboMethodEntity = ((CacheInfo) userObject).getDubboMethodEntity();
                         DubboPanel.refreshUI(component.getDubboPanel(), dubboMethodEntity);

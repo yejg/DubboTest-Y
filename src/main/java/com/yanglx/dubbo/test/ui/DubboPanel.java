@@ -35,6 +35,7 @@ public class DubboPanel extends JBPanel {
     private JButton saveAsBtn;
     private JComboBox<CacheInfo> addressBox;
     private JTextField methodNameTextField;
+    private JTextField timeoutTextField;
     private JTextField versionTextField;
     private JTextField groupTextField;
     private JButton saveBtn;
@@ -153,23 +154,36 @@ public class DubboPanel extends JBPanel {
         methodNameTextField = new JBTextField();
         topFormPanel.add(methodNameTextField, gbc);
 
+        // 4 超时时间
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.timeout.seconds")), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        gbc.gridwidth = 9;
+        gbc.weightx = 1;
+        timeoutTextField = new JBTextField(String.valueOf(DubboMethodEntity.DEFAULT_TIMEOUT));
+        topFormPanel.add(timeoutTextField, gbc);
+
         mainPanel.add(topFormPanel, BorderLayout.NORTH);
 
-        // 4 中间编辑区（Params和Response）
+        // 5 中间编辑区（Params和Response）
         editorPane = new JPanel(new BorderLayout());
 
         JBSplitter splitter = new JBSplitter();
         splitter.setProportion(0.5f);
 
-        // 4.1 Params编辑器
-        jsonEditorReq = new JsonEditor(project);
+        // 5.1 Params编辑器
+        jsonEditorReq = new JsonEditor(project, false);
         jsonEditorReq.setBorder(BorderFactory.createTitledBorder(DubboTestBundle.message("dubbo-test.tool.params")));
-        PluginUtils.writeDocument(project, jsonEditorReq.getDocument(), "{}");
+        jsonEditorReq.setText("{}");
 
-        // 4.2 Response编辑器
-        jsonEditorResp = new JsonEditor(project);
+        // 5.2 Response编辑器
+        jsonEditorResp = new JsonEditor(project, true);
         jsonEditorResp.setBorder(BorderFactory.createTitledBorder(DubboTestBundle.message("dubbo-test.tool.response")));
-        PluginUtils.writeDocument(project, jsonEditorResp.getDocument(), "{}");
+        jsonEditorResp.setText("");
 
         splitter.setFirstComponent(jsonEditorReq);
         splitter.setSecondComponent(jsonEditorResp);
@@ -177,9 +191,9 @@ public class DubboPanel extends JBPanel {
 
         mainPanel.add(editorPane, BorderLayout.CENTER);
 
-        // 5 底部状态栏
+        // 6 底部状态栏
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        tip = new JLabel("time:0");
+        tip = new JLabel(DubboTestBundle.message("dubbo-test.invoke.cost.time") + "0");
         tip.setBorder(new EmptyBorder(2, 5, 2, 5));
 
         invokeBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.run"));
@@ -202,8 +216,7 @@ public class DubboPanel extends JBPanel {
                     DubboSetingState.CacheType.HISTORY
             );
             leftTree.refresh();
-
-            PluginUtils.writeDocument(project, jsonEditorResp.getDocument(), "");
+            jsonEditorResp.setText("");
 
             // 异步调用Dubbo
             Future<Object> submit = executorService.submit(() ->
@@ -214,17 +227,13 @@ public class DubboPanel extends JBPanel {
             executorService.submit(() -> {
                 long start = System.currentTimeMillis();
                 try {
-                    Object result = submit.get(10, TimeUnit.SECONDS);
-                    PluginUtils.writeDocument(
-                            project,
-                            jsonEditorResp.getDocument(),
-                            JsonUtils.toPrettyJSONString(result)
-                    );
-                    tip.setText("time:" + (System.currentTimeMillis() - start));
+                    Object result = submit.get(dubboMethodEntity.getTimeout(), TimeUnit.SECONDS);
+                    jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
+                    tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
                 } catch (Exception ex) {
                     String error = ex.getMessage() != null ? ex.getMessage() : ex.toString();
-                    PluginUtils.writeDocument(project, jsonEditorResp.getDocument(), error);
-                    tip.setText("time:" + (System.currentTimeMillis() - start) + " (error)");
+                    jsonEditorResp.setText(error);
+                    tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
                 }
             });
         });
@@ -283,6 +292,7 @@ public class DubboPanel extends JBPanel {
         }
         dubboMethodEntity.setVersion(versionTextField.getText());
         dubboMethodEntity.setGroup(groupTextField.getText());
+        dubboMethodEntity.setTimeout(timeoutTextField.getText());
 
         try {
             String reqText = jsonEditorReq.getDocumentText();
@@ -323,11 +333,7 @@ public class DubboPanel extends JBPanel {
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("param", dubboMethodEntity.getParam());
         paramMap.put("methodType", dubboMethodEntity.getMethodType());
-        PluginUtils.writeDocument(
-                dubboPanel.project,
-                dubboPanel.jsonEditorReq.getDocument(),
-                JsonUtils.toPrettyJSONString(paramMap)
-        );
+        dubboPanel.jsonEditorReq.setText(JsonUtils.toPrettyJSONString(paramMap));
         dubboPanel.updateUI();
     }
 
