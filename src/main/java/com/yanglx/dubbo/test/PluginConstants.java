@@ -12,7 +12,7 @@ package com.yanglx.dubbo.test;
  */
 public class PluginConstants {
     /** PLUGIN_NAME */
-    public static final String PLUGIN_NAME = "DubboTest";
+    public static final String PLUGIN_NAME = "DubboTest-Y";
 
     /** 默认超时时间 10秒 */
     public static final int DEFAULT_TIMEOUT_SECOND = 10;

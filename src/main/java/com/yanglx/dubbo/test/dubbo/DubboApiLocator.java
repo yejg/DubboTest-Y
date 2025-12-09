@@ -112,7 +112,7 @@ public class DubboApiLocator {
         reference.setCheck(false);
         reference.setGeneric("true");
         reference.setRetries(0);
-        reference.setTimeout(10 * 1000);
+        reference.setTimeout(dubboMethodEntity.getTimeout() * 1000);
         if (dubboMethodEntity.getAddress().startsWith(AddressTypeEnum.dubbo.name())) {
             reference.setUrl(dubboMethodEntity.getAddress());
         } else {

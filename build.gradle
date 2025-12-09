@@ -1,6 +1,6 @@
 plugins {
     id('java')
-    id('org.jetbrains.intellij') version '1.10.0'
+    id('org.jetbrains.intellij') version '1.13.3'
 }
 
 group = group
@@ -19,6 +19,8 @@ intellij {
     pluginName = name
     version = ideaVersion
     plugins = ['com.intellij.java']
+    // 禁用自动 instrumentation
+    instrumentCode = false
 }
 
 dependencies {
@@ -37,13 +39,15 @@ dependencies {
 
 tasks {
     runIde {
-        jvmArgs '--add-exports', 'java.base/jdk.internal.vm=ALL-UNNAMED'
+        jvmArgs '--add-exports', 'java.base/jdk.internal.vm=ALL-UNNAMED' , '-Duser.language=en', '-Duser.country=US'
         autoReloadPlugins = true
     }
 
     patchPluginXml {
         pluginDescription = file('includes/pluginDescription.html').text
         changeNotes = file('includes/pluginChanges.html').text
+        sinceBuild = '210.0'
+        untilBuild = "252.*"
     }
 
     publishPlugin {

@@ -1,19 +1,19 @@
 <idea-plugin>
-    <id>com.yanglx</id>
-    <name>DubboTest</name>
-    <vendor email="dev_ylx@163.com" url="">yanglx</vendor>
+    <id>com.yejg</id>
+    <name>DubboTest-Y</name>
+    <vendor email="yejg1212@163.com" url="">yejg</vendor>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="183"/>
+    <idea-version since-build="212.0" until-build="252.*"/> <!-- 这里的配置会被gradle-intellij-plugin插件自动修改，所以最好写在build.gradle里 -->
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="DubboTest"
+        <toolWindow id="DubboTest-Y"
                     secondary="false"
                     anchor="bottom"
-                    icon="/icons/dubbo.svg"
+                    icon="/icons/DubboTest-Y.svg"
                     factoryClass="com.yanglx.dubbo.test.DubboPanelToolWindow"/>
         <applicationService serviceImplementation="com.yanglx.dubbo.test.DubboSetingState"/>
         <!-- alt + enter -->
@@ -22,15 +22,15 @@
         </intentionAction>
         <applicationConfigurable parentId="tools" instance="com.yanglx.dubbo.test.config.AppSettingsConfigurable"
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
-                                 displayName="DubboTest"/>
+                                 displayName="DubboTest-Y"/>
     </extensions>
 
     <actions>
         <action id="DubboTestAction"
                 class="com.yanglx.dubbo.test.action.DubboTestToolWindowOpenAnAction"
-                text="RunDubboTest"
+                text="Run DubboTest-Y"
                 description="DubboInvokerFrameOpen"
-                icon="/icons/dubbo.svg"
+                icon="/icons/DubboTest-Y.svg"
                 popup="true">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>

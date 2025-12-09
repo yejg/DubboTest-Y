@@ -20,7 +20,7 @@ public class PluginIcons {
     private static final String ICON_FOLDER = "/icons/";
 
     /** DUBBO */
-    public static final Icon DUBBO = load("dubbo.svg");
+    public static final Icon DUBBO = load("DubboTest-Y.svg");
 
     /**
      * Load
