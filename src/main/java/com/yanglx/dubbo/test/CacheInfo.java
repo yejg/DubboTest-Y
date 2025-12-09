@@ -51,6 +51,9 @@ public class CacheInfo implements Serializable {
 
     private Date date;
 
+    /** Timeout(second) */
+    private int timeout = PluginConstants.DEFAULT_TIMEOUT_SECOND;
+
     public String getInterfaceName() {
         return interfaceName;
     }
@@ -131,6 +134,14 @@ public class CacheInfo implements Serializable {
         this.date = date;
     }
 
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
     public static CacheInfo of(String id, String name, DubboMethodEntity dubboMethodEntity) {
         CacheInfo cacheInfo = new CacheInfo();
         cacheInfo.setId(id);
@@ -143,6 +154,7 @@ public class CacheInfo implements Serializable {
         cacheInfo.setParamObjJson(JsonUtils.toJSONString(dubboMethodEntity.getParam()));
         cacheInfo.setAddress(dubboMethodEntity.getAddress());
         cacheInfo.setDate(new Date());
+        cacheInfo.setTimeout(dubboMethodEntity.getTimeout());
         return cacheInfo;
     }
 
@@ -158,6 +170,7 @@ public class CacheInfo implements Serializable {
         dubboMethodEntity.setMethodName(this.getMethodName());
         dubboMethodEntity.setVersion(this.getVersion());
         dubboMethodEntity.setGroup(this.getGroup());
+        dubboMethodEntity.setTimeout(this.getTimeout());
 
         List<String> stringList = JsonUtils.toJavaList(this.getMethodTypeJson(), String.class);
         String[] methodTypes = new String[stringList.size()];

@@ -1,5 +1,7 @@
 package com.yanglx.dubbo.test.dubbo;
 
+import com.yanglx.dubbo.test.PluginConstants;
+
 /**
  * <p>Description: </p>
  *
@@ -10,8 +12,6 @@ package com.yanglx.dubbo.test.dubbo;
  * @since 1.0.0
  */
 public class DubboMethodEntity {
-
-    public static final int DEFAULT_TIMEOUT = 10;
 
     private String id;
     /** Interface name */
@@ -29,7 +29,7 @@ public class DubboMethodEntity {
     /** Address */
     private String address;
     /** Timeout(second) */
-    private int timeout = DEFAULT_TIMEOUT;
+    private int timeout = PluginConstants.DEFAULT_TIMEOUT_SECOND;
 
     public String getId() {
         return id;

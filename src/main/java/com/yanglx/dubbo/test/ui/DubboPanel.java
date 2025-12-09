@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBTextField;
 import com.yanglx.dubbo.test.CacheInfo;
 import com.yanglx.dubbo.test.DubboSetingState;
 import com.yanglx.dubbo.test.DubboTestBundle;
+import com.yanglx.dubbo.test.PluginConstants;
 import com.yanglx.dubbo.test.dubbo.DubboApiLocator;
 import com.yanglx.dubbo.test.dubbo.DubboMethodEntity;
 import com.yanglx.dubbo.test.utils.JsonUtils;
@@ -164,7 +165,7 @@ public class DubboPanel extends JBPanel {
         gbc.gridy = 3;
         gbc.gridwidth = 9;
         gbc.weightx = 1;
-        timeoutTextField = new JBTextField(String.valueOf(DubboMethodEntity.DEFAULT_TIMEOUT));
+        timeoutTextField = new JBTextField(String.valueOf(PluginConstants.DEFAULT_TIMEOUT_SECOND));
         topFormPanel.add(timeoutTextField, gbc);
 
         mainPanel.add(topFormPanel, BorderLayout.NORTH);
@@ -316,6 +317,7 @@ public class DubboPanel extends JBPanel {
         dubboPanel.methodNameTextField.setText(dubboMethodEntity.getMethodName());
         dubboPanel.versionTextField.setText(dubboMethodEntity.getVersion());
         dubboPanel.groupTextField.setText(dubboMethodEntity.getGroup());
+        dubboPanel.timeoutTextField.setText(dubboMethodEntity.getTimeout() + "");
 
         // 选择地址
         JComboBox<CacheInfo> addressBox = dubboPanel.addressBox;
