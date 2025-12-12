@@ -1,6 +1,5 @@
 package com.yanglx.dubbo.test.dubbo;
 
-
 import com.google.common.collect.Lists;
 import com.yanglx.dubbo.test.PluginConstants;
 import com.yanglx.dubbo.test.common.AddressTypeEnum;
@@ -10,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
+import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.config.utils.ReferenceConfigCache;
 import org.apache.dubbo.config.utils.ReferenceConfigCache.KeyGenerator;
 import org.apache.dubbo.rpc.service.GenericService;
@@ -42,6 +42,8 @@ public class DubboApiLocator {
         }
         application.setName(PluginConstants.PLUGIN_NAME);
         application.setQosEnable(false);  // 禁用QoS，用不到QoS、避免报端口占用错误
+        DubboBootstrap bootstrap = DubboBootstrap.getInstance();
+        bootstrap.application(application);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DubboApiLocator.class);
@@ -80,7 +82,7 @@ public class DubboApiLocator {
      * @since 1.0.0
      */
     public Object invoke(DubboMethodEntity dubboMethodEntity) {
-        LOGGER.debug("invoke method ", JsonUtils.toJSONString(dubboMethodEntity));
+        LOGGER.debug("invoke method, {}", JsonUtils.toJSONString(dubboMethodEntity));
 
         if (dubboMethodEntity == null
                 || StrUtils.isBlank(dubboMethodEntity.getAddress())
@@ -112,7 +114,7 @@ public class DubboApiLocator {
      */
     private ReferenceConfig<GenericService> getReferenceConfig(DubboMethodEntity dubboMethodEntity) {
         ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
-        reference.setApplication(application);
+        // reference.setApplication(application);
         reference.setInterface(dubboMethodEntity.getInterfaceName());
         reference.setCheck(false);
         reference.setGeneric("true");

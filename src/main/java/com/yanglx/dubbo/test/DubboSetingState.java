@@ -1,7 +1,7 @@
 package com.yanglx.dubbo.test;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
@@ -106,7 +106,7 @@ public class DubboSetingState implements PersistentStateComponent<DubboSetingSta
      * @since 1.0.0
      */
     public static DubboSetingState getInstance() {
-        return ServiceManager.getService(DubboSetingState.class);
+        return ApplicationManager.getApplication().getService(DubboSetingState.class);
     }
 
     /**
