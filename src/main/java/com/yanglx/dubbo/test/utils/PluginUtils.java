@@ -24,6 +24,7 @@ import com.yanglx.dubbo.test.ui.TabBar;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * <p>Description: </p>
@@ -48,7 +49,7 @@ public class PluginUtils {
         WriteCommandAction.runWriteCommandAction(project, () -> document.setText(text));
     }
 
-    public static void asynWork(Project project,Runnable runnable){
+    public static void asynWork(Project project, Runnable runnable) {
         WriteCommandAction.runWriteCommandAction(project, runnable);
     }
 
@@ -61,9 +62,7 @@ public class PluginUtils {
      * @return the boolean
      * @since 1.1.0
      */
-    public static boolean isAvailable(Project project,
-                                      Editor editor,
-                                      PsiElement element) {
+    public static boolean isAvailable(Project project, Editor editor, PsiElement element) {
         if (project == null || editor == null) {
             return false;
         }
@@ -104,8 +103,7 @@ public class PluginUtils {
      * @param element element
      * @since 1.1.0
      */
-    public static void openToolWindow(Project project,
-                                      PsiElement element) {
+    public static void openToolWindow(Project project, PsiElement element) {
         PsiMethod psiMethod = getPsiMethod(element);
 
         PsiParameterList parameterList = psiMethod.getParameterList();
@@ -144,12 +142,17 @@ public class PluginUtils {
         dubboMethodEntity.setAddress(defaultSetting.getAddress());
         dubboMethodEntity.setVersion(defaultSetting.getVersion());
         dubboMethodEntity.setGroup(defaultSetting.getGroup());
+        dubboMethodEntity.setTimeout(defaultSetting.getTimeout());
         dubboMethodEntity.setInterfaceName(interfaceName);
         dubboMethodEntity.setParam(initParamArray);
         dubboMethodEntity.setMethodType(methodType);
         dubboMethodEntity.setMethodName(methodName);
-        dubboMethodEntity.setId(defaultSetting.getId());
+        dubboMethodEntity.setId(generateNewId());
         DubboPanel.refreshUI(component.getDubboPanel(), dubboMethodEntity);
+    }
+
+    public static String generateNewId() {
+        return UUID.randomUUID().toString();
     }
 
 }

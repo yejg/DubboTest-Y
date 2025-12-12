@@ -1,0 +1,35 @@
+<svg width="13" height="13" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 科技蓝紫渐变 -->
+    <linearGradient id="techGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c6ff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0072ff" stop-opacity="1"/>
+    </linearGradient>
+    <!-- 微发光滤镜（不刺眼，适配小尺寸） -->
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="0.2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <!-- 网格纹理（透明背景兼容） -->
+    <pattern id="grid" width="4" height="4" patternUnits="userSpaceOnUse">
+      <path d="M4 0 L0 0 0 4" fill="none" stroke="#0072ff" stroke-width="0.1" opacity="0.3"/>
+    </pattern>
+  </defs>
+
+  <!-- 透明背景 + 网格纹理（无黑色背景） -->
+  <rect width="13" height="13" fill="url(#grid)" opacity="0.5"/>
+
+  <!-- 科技感边框（六边形简化版，适配小尺寸） -->
+  <path d="M6.5 1.5 L10.5 3.5 L10.5 9.5 L6.5 11.5 L2.5 9.5 L2.5 3.5 Z"
+        fill="none" stroke="url(#techGrad)" stroke-width="0.4" filter="url(#glow)"/>
+
+  <!-- 核心缩写 DTY（居中对齐，粗体增强识别度） -->
+  <text x="6.5" y="7.8" font-family="Arial, monospace" font-size="3"
+        text-anchor="middle" fill="url(#techGrad)" font-weight="bold" filter="url(#glow)">
+    DTY
+  </text>
+
+  <!-- 点缀科技光点（增强细节） -->
+  <circle cx="3" cy="3" r="0.2" fill="#00c6ff" opacity="0.8"/>
+  <circle cx="10" cy="10" r="0.2" fill="#0072ff" opacity="0.8"/>
+</svg>

@@ -1,6 +1,7 @@
 package com.yanglx.dubbo.test.ui;
 
 import com.intellij.json.JsonFileType;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.impl.text.PsiAwareTextEditorProvider;
@@ -28,15 +29,19 @@ public class JsonEditor extends NonOpaquePanel {
     private final PsiFile psiFile;
     /** Project */
     private final Project project;
+    /** 接口响应区域，防止用户编辑 */
+    private boolean readOnly = false;
 
     /**
      * Json editor
      *
      * @param project project
+     * @param readOnly 接口响应区域，应该避免用户编辑
      * @since 1.0.0
      */
-    public JsonEditor(Project project) {
+    public JsonEditor(Project project, boolean readOnly) {
         this.project = project;
+        this.readOnly = readOnly;
         this.psiFile = this.createPsiFile();
         VirtualFile virtualFile = this.psiFile.getVirtualFile();
         FileEditor fileEditor = this.createFileEditor(virtualFile);
@@ -77,6 +82,23 @@ public class JsonEditor extends NonOpaquePanel {
     }
 
     /**
+     * 设置文本内容<br/>
+     * 如果初始设置控件是只读，则先解除只读，设置完文本后，再锁定
+     *
+     * @param text
+     */
+    public void setText(String text) {
+        Document document = this.getDocument();
+        if (this.readOnly) {
+            document.setReadOnly(false);
+        }
+        WriteCommandAction.runWriteCommandAction(project, () -> document.setText(text));
+        if (this.readOnly) {
+            document.setReadOnly(true);
+        }
+    }
+
+    /**
      * Create psi file
      *
      * @return the psi file
@@ -85,11 +107,11 @@ public class JsonEditor extends NonOpaquePanel {
     private PsiFile createPsiFile() {
         JsonFileType fileType = JsonFileType.INSTANCE;
         PsiFile psiFile = PsiFileFactory.getInstance(this.project)
-            .createFileFromText("tmp." + fileType.getDefaultExtension()
-                , fileType.getLanguage()
-                , "{}"
-                , true
-                , false);
+                .createFileFromText("tmp." + fileType.getDefaultExtension()
+                        , fileType.getLanguage()
+                        , "{}"
+                        , true
+                        , false);
         psiFile.putUserData(Key.create("JSON_HELPER"), "TEST");
         return psiFile;
     }

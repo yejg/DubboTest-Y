@@ -77,4 +77,8 @@ public class TabBar extends JBEditorTabs implements TabsListener {
     public static TabInfo getSelectionTabInfo() {
         return tabsMap.get(activeTabId);
     }
+
+    public TabInfo getTabInfo(String tabId) {
+        return tabsMap.get(tabId);
+    }
 }

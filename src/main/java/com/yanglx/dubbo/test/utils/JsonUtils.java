@@ -7,13 +7,26 @@ import java.util.List;
 
 public class JsonUtils {
 
+    private static final ExclusionStrategy exclusionStrategy = new ExclusionStrategy() {
+        @Override
+        public boolean shouldSkipField(FieldAttributes fieldAttributes) {
+            // 根据字段名过滤
+            return "serialVersionUID".equals(fieldAttributes.getName());
+        }
+
+        @Override
+        public boolean shouldSkipClass(Class<?> aClass) {
+            return false;
+        }
+    };
+
     private static final Gson prettyGson = (new GsonBuilder())
             .setPrettyPrinting()
-            .serializeNulls()
+            .serializeNulls().setExclusionStrategies(exclusionStrategy)
             .create();
 
     private static final Gson uglyGson = (new GsonBuilder())
-            .serializeNulls()
+            .serializeNulls().setExclusionStrategies(exclusionStrategy)
             .create();
 
     public static String toJSONString(Object obj) {

@@ -35,6 +35,15 @@ public class DubboApiLocator {
      * application
      */
     private static final ApplicationConfig application = new ApplicationConfig();
+    static {
+        // 设置Dubbo版本避免空指针异常
+        if (System.getProperty("dubbo.version") == null) {
+            System.setProperty("dubbo.version", "3.0.0");
+        }
+        application.setName(PluginConstants.PLUGIN_NAME);
+        application.setQosEnable(false);  // 禁用QoS，用不到QoS、避免报端口占用错误
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DubboApiLocator.class);
     private static final String CACHE_NAME = PluginConstants.PLUGIN_NAME;
 
@@ -62,10 +71,6 @@ public class DubboApiLocator {
         List<String> uniqueParams = Lists.newArrayList(interfaceName, group, version, url, registries);
         return String.join("_", uniqueParams);
     };
-
-    static {
-        application.setName(PluginConstants.PLUGIN_NAME);
-    }
 
     /**
      * Invoke
@@ -112,7 +117,7 @@ public class DubboApiLocator {
         reference.setCheck(false);
         reference.setGeneric("true");
         reference.setRetries(0);
-        reference.setTimeout(10 * 1000);
+        reference.setTimeout(dubboMethodEntity.getTimeout() * 1000);
         if (dubboMethodEntity.getAddress().startsWith(AddressTypeEnum.dubbo.name())) {
             reference.setUrl(dubboMethodEntity.getAddress());
         } else {

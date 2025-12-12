@@ -1,5 +1,7 @@
 package com.yanglx.dubbo.test.dubbo;
 
+import com.yanglx.dubbo.test.PluginConstants;
+
 /**
  * <p>Description: </p>
  *
@@ -26,6 +28,8 @@ public class DubboMethodEntity {
     private Object[] param;
     /** Address */
     private String address;
+    /** Timeout(second) */
+    private int timeout = PluginConstants.DEFAULT_TIMEOUT_SECOND;
 
     public String getId() {
         return id;
@@ -89,5 +93,23 @@ public class DubboMethodEntity {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    public void setTimeout(String timeout) {
+        if (timeout != null && !timeout.isEmpty()) {
+            try {
+                this.timeout = Integer.parseInt(timeout);
+            } catch (Exception e) {
+
+            }
+        }
     }
 }
