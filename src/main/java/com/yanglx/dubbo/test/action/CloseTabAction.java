@@ -1,6 +1,7 @@
 package com.yanglx.dubbo.test.action;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
@@ -36,5 +37,10 @@ public class CloseTabAction extends AnAction {
         //鼠标悬停图标
         Presentation presentation1 = e.getPresentation();
         presentation1.setHoveredIcon(AllIcons.Actions.CloseHovered);
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.EDT;
     }
 }
