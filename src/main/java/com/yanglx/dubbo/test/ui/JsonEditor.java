@@ -1,6 +1,6 @@
 package com.yanglx.dubbo.test.ui;
 
-import com.intellij.json.JsonFileType;
+import com.intellij.lang.Language;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileEditor;
@@ -105,13 +105,14 @@ public class JsonEditor extends NonOpaquePanel {
      * @since 1.0.0
      */
     private PsiFile createPsiFile() {
-        JsonFileType fileType = JsonFileType.INSTANCE;
+        Language jsonLanguage = Language.findLanguageByID("JSON");
+        if (jsonLanguage == null) {
+            // 使用自定义的 JsonLanguage 实例，兼容2024.3版本
+            jsonLanguage = com.yanglx.dubbo.test.copy.JsonLanguage.INSTANCE;
+        }
+
         PsiFile psiFile = PsiFileFactory.getInstance(this.project)
-                .createFileFromText("tmp." + fileType.getDefaultExtension()
-                        , fileType.getLanguage()
-                        , "{}"
-                        , true
-                        , false);
+                .createFileFromText("tmp.json", jsonLanguage, "{}", true, false);
         psiFile.putUserData(Key.create("JSON_HELPER"), "TEST");
         return psiFile;
     }
