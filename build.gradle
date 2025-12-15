@@ -24,7 +24,7 @@ intellij {
 }
 
 dependencies {
-    implementation('org.apache.dubbo:dubbo:3.0.0') {
+    implementation('org.apache.dubbo:dubbo:3.0.2') {
         exclude group: 'org.springframework'
     }
     implementation('com.google.code.gson:gson:2.8.9')
