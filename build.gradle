@@ -47,7 +47,7 @@ tasks {
         pluginDescription = file('includes/pluginDescription.html').text
         changeNotes = file('includes/pluginChanges.html').text
         sinceBuild = '222.3345.118'
-        untilBuild = "243.*"
+        untilBuild = "242.*"
     }
 
     publishPlugin {

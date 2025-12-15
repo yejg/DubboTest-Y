@@ -36,8 +36,7 @@ public class DubboPanelToolWindow implements ToolWindowFactory {
         }
         Thread.currentThread().setContextClassLoader(DubboPanelToolWindow.class.getClassLoader());
         ToolBarPanel dubboPanel = new ToolBarPanel(project, toolWindow);
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        //        ContentFactory contentFactory = ContentFactory.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(dubboPanel, null, false);
         toolWindow.getContentManager().addContent(content);
     }
