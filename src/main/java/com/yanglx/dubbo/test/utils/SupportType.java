@@ -5,7 +5,6 @@ import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypes;
 import com.intellij.psi.PsiVariable;
 import com.intellij.psi.impl.PsiClassImplUtil;
 import com.intellij.psi.search.ProjectAndLibrariesScope;
@@ -187,18 +186,18 @@ public enum SupportType {
     public static SupportType touch(PsiVariable parameter) {
         PsiType type = parameter.getType();
 
-        if (PsiTypes.booleanType().equals(type)) {
+        if (PsiType.BOOLEAN.equals(type)) {
             return SupportType.BOOLEAN;
         }
 
-        if (PsiTypes.charType().equals(type)) {
+        if (PsiType.CHAR.equals(type)) {
             return SupportType.CHAR;
         }
 
-        if (PsiTypes.byteType().equals(type)
-                || PsiTypes.intType().equals(type)
-                || PsiTypes.longType().equals(type)
-                || PsiTypes.shortType().equals(type)
+        if (PsiType.BYTE.equals(type)
+                || PsiType.INT.equals(type)
+                || PsiType.LONG.equals(type)
+                || PsiType.SHORT.equals(type)
                 || type.equalsToText(Integer.class.getCanonicalName())
                 || type.equalsToText(Long.class.getCanonicalName())
                 || type.equalsToText(Short.class.getCanonicalName())
@@ -206,8 +205,8 @@ public enum SupportType {
             return SupportType.INTEGER;
         }
 
-        if (PsiTypes.doubleType().equals(type)
-                || PsiTypes.floatType().equals(type)
+        if (PsiType.DOUBLE.equals(type)
+                || PsiType.FLOAT.equals(type)
                 || type.equalsToText(Double.class.getCanonicalName())
                 || type.equalsToText(Float.class.getCanonicalName())) {
             return SupportType.FLOAT;
