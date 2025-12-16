@@ -8,6 +8,7 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiVariable;
 import com.intellij.psi.impl.PsiClassImplUtil;
 import com.intellij.psi.search.ProjectAndLibrariesScope;
+import com.yanglx.dubbo.test.PluginConstants;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -160,6 +161,9 @@ public enum SupportType {
         PsiField[] allField = PsiClassImplUtil.getAllFields(psiClass);
         Map<String, Object> result = new HashMap<>();
         for (PsiField psiField : allField) {
+            if (PluginConstants.SERIAL_VERSION_UID.equals(psiField.getName())) {
+                continue;
+            }
             SupportType touch = touch(psiField);
             result.put(psiField.getName(), touch.getValue(psiField,map));
         }
