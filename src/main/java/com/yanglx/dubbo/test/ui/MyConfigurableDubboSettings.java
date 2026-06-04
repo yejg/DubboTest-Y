@@ -106,7 +106,7 @@ public class MyConfigurableDubboSettings {
         if (StrUtils.isNotBlank(this.protocol) && StrUtils.isNotBlank(this.ip) && StrUtils.isNotBlank(this.port)) {
             return this.protocol + "://" + this.ip + ":" + this.port;
         } else {
-            return null;
+            return "";
         }
     }
 }

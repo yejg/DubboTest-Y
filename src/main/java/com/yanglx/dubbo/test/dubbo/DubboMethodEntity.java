@@ -107,8 +107,9 @@ public class DubboMethodEntity {
         if (timeout != null && !timeout.isEmpty()) {
             try {
                 this.timeout = Integer.parseInt(timeout);
-            } catch (Exception e) {
-
+            } catch (NumberFormatException e) {
+                com.intellij.openapi.diagnostic.Logger.getInstance(DubboMethodEntity.class)
+                    .warn("Invalid timeout value: " + timeout, e);
             }
         }
     }
