@@ -217,7 +217,13 @@ public class DubboPanel extends JBPanel {
                     DubboSetingState.CacheType.HISTORY
             );
             leftTree.refresh();
-            jsonEditorResp.setText("");
+
+            String runText = DubboTestBundle.message("dubbo-test.tool.run");
+            String loadingText = DubboTestBundle.message("dubbo-test.invokeing.tootip");
+
+            invokeBtn.setEnabled(false);
+            invokeBtn.setText(loadingText);
+            jsonEditorResp.setText(loadingText);
 
             // 异步调用Dubbo
             Future<Object> submit = executorService.submit(() ->
@@ -229,12 +235,20 @@ public class DubboPanel extends JBPanel {
                 long start = System.currentTimeMillis();
                 try {
                     Object result = submit.get(dubboMethodEntity.getTimeout(), TimeUnit.SECONDS);
-                    jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
-                    tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
+                    SwingUtilities.invokeLater(() -> {
+                        jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
+                        tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
+                        invokeBtn.setText(runText);
+                        invokeBtn.setEnabled(true);
+                    });
                 } catch (Exception ex) {
                     String error = ex.getMessage() != null ? ex.getMessage() : ex.toString();
-                    jsonEditorResp.setText(error);
-                    tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
+                    SwingUtilities.invokeLater(() -> {
+                        jsonEditorResp.setText(error);
+                        tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
+                        invokeBtn.setText(runText);
+                        invokeBtn.setEnabled(true);
+                    });
                 }
             });
         });

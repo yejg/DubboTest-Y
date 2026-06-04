@@ -39,6 +39,15 @@ public class DubboPanelToolWindow implements ToolWindowFactory {
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(dubboPanel, null, false);
         toolWindow.getContentManager().addContent(content);
+
+        // 后台预热 DubboBootstrap，避免首次调用卡顿
+        new Thread(() -> {
+            try {
+                Thread.currentThread().setContextClassLoader(DubboPanelToolWindow.class.getClassLoader());
+                Class.forName("com.yanglx.dubbo.test.dubbo.DubboApiLocator");
+            } catch (ClassNotFoundException ignored) {
+            }
+        }, "dubbo-warmup").start();
     }
 
 }

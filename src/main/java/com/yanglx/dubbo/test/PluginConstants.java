@@ -15,7 +15,7 @@ public class PluginConstants {
     public static final String PLUGIN_NAME = "DubboTest-Y";
 
     /** 默认超时时间 10秒 */
-    public static final int DEFAULT_TIMEOUT_SECOND = 10;
+    public static final int DEFAULT_TIMEOUT_SECOND = 30;
 
     /** serialVersionUID */
     public static final String SERIAL_VERSION_UID = "serialVersionUID";

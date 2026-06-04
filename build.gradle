@@ -38,6 +38,10 @@ dependencies {
 }
 
 tasks {
+    initializeIntelliJPlugin {
+        selfUpdateCheck = false
+    }
+
     runIde {
         jvmArgs '--add-exports', 'java.base/jdk.internal.vm=ALL-UNNAMED' , '-Duser.language=en', '-Duser.country=US'
         autoReloadPlugins = true
