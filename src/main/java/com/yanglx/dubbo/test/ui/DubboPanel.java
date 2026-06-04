@@ -11,7 +11,6 @@ import com.yanglx.dubbo.test.PluginConstants;
 import com.yanglx.dubbo.test.dubbo.DubboApiLocator;
 import com.yanglx.dubbo.test.dubbo.DubboMethodEntity;
 import com.yanglx.dubbo.test.utils.JsonUtils;
-import com.yanglx.dubbo.test.utils.PluginUtils;
 import com.yanglx.dubbo.test.utils.StrUtils;
 
 import javax.swing.*;
@@ -219,7 +218,7 @@ public class DubboPanel extends JBPanel {
             leftTree.refresh();
 
             String runText = DubboTestBundle.message("dubbo-test.tool.run");
-            String loadingText = DubboTestBundle.message("dubbo-test.invokeing.tootip");
+            String loadingText = DubboTestBundle.message("dubbo-test.invoking.tooltip");
 
             invokeBtn.setEnabled(false);
             invokeBtn.setText(loadingText);
