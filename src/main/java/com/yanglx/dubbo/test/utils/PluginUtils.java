@@ -105,6 +105,9 @@ public class PluginUtils {
      */
     public static void openToolWindow(Project project, PsiElement element) {
         PsiMethod psiMethod = getPsiMethod(element);
+        if (psiMethod == null) {
+            return;
+        }
 
         PsiParameterList parameterList = psiMethod.getParameterList();
         PsiJavaFile javaFile = (PsiJavaFile) psiMethod.getContainingFile();

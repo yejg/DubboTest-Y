@@ -20,12 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.intellij.openapi.Disposable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class DubboPanel extends JBPanel {
+public class DubboPanel extends JBPanel implements Disposable {
     private static final long serialVersionUID = -8541227582365214834L;
 
     private JPanel mainPanel;
@@ -424,5 +425,10 @@ public class DubboPanel extends JBPanel {
 
     public DubboMethodEntity getDubboMethodEntity() {
         return dubboMethodEntity;
+    }
+
+    @Override
+    public void dispose() {
+        executorService.shutdownNow();
     }
 }

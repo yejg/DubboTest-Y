@@ -78,11 +78,9 @@ public class DubboSetingState implements PersistentStateComponent<DubboSetingSta
             this.paramInfoCacheList.remove(cacheInfo);
             this.paramInfoCacheList.add(cacheInfo);
         }else {
-            if (historyParamInfoCacheList.size() >= MAX_HISTORY_SIZE) {
-                this.historyParamInfoCacheList.addFirst(cacheInfo);
+            this.historyParamInfoCacheList.addFirst(cacheInfo);
+            if (historyParamInfoCacheList.size() > MAX_HISTORY_SIZE) {
                 this.historyParamInfoCacheList.removeLast();
-            }else {
-                this.historyParamInfoCacheList.add(cacheInfo);
             }
         }
     }

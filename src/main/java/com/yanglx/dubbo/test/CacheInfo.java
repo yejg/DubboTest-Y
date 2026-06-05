@@ -194,7 +194,7 @@ public class CacheInfo implements Serializable {
         if (this == o) return true;
         if (!(o instanceof CacheInfo)) return false;
         CacheInfo cacheInfo = (CacheInfo) o;
-        return id.equals(cacheInfo.id);
+        return Objects.equals(id, cacheInfo.id);
     }
 
     @Override

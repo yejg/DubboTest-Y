@@ -13,14 +13,14 @@ import com.yanglx.dubbo.test.action.CloseTabAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TabBar extends JBEditorTabs implements TabsListener {
 
-    public static Map<String, TabInfo> tabsMap = new LinkedHashMap<>(32);
-    public static String activeTabId;
+    public static Map<String, TabInfo> tabsMap = new ConcurrentHashMap<>(32);
+    public static volatile String activeTabId;
     private final Project project;
     private final TreePanel leftTree;
 
@@ -28,7 +28,7 @@ public class TabBar extends JBEditorTabs implements TabsListener {
         super(project, IdeFocusManager.getInstance(project), project);
         this.project = project;
         this.leftTree = leftTree;
-        tabsMap = new LinkedHashMap<>();
+        tabsMap = new ConcurrentHashMap<>();
         this.addListener(this);
         this.setTabDraggingEnabled(true);
         this.addTab();

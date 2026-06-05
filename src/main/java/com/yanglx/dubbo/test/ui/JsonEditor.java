@@ -67,6 +67,9 @@ public class JsonEditor extends NonOpaquePanel {
      */
     public String getDocumentText() {
         Document document = this.getDocument();
+        if (document == null) {
+            return "";
+        }
         return document.getText();
     }
 
@@ -89,6 +92,9 @@ public class JsonEditor extends NonOpaquePanel {
      */
     public void setText(String text) {
         Document document = this.getDocument();
+        if (document == null) {
+            return;
+        }
         if (this.readOnly) {
             document.setReadOnly(false);
         }
