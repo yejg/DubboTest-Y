@@ -186,6 +186,12 @@ public class CacheInfo implements Serializable {
 
     @Override
     public String toString() {
+        if (name == null || name.isEmpty()) {
+            return address != null ? address : "";
+        }
+        if (address != null && !address.isEmpty()) {
+            return name + " - " + address;
+        }
         return name;
     }
 
