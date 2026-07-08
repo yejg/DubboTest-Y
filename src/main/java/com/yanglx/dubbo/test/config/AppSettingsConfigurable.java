@@ -59,12 +59,14 @@ import javax.swing.JComponent;
         settings.setDubboConfigs(collect);
 
         //刷新下拉
-        TabInfo selectedInfo = TabBar.getSelectionTabInfo();
-        if (selectedInfo == null) {
-            return;
+        for (TabBar tabBar : TabBar.getAllInstances()) {
+            TabInfo selectedInfo = tabBar.getSelectionTabInfo();
+            if (selectedInfo == null) {
+                continue;
+            }
+            Tab component = (Tab) selectedInfo.getComponent();
+            component.getDubboPanel().reset();
         }
-        Tab component = (Tab) selectedInfo.getComponent();
-        component.getDubboPanel().reset();
     }
 
     @Override

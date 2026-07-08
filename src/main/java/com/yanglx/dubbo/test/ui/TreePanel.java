@@ -122,7 +122,7 @@ public class TreePanel extends JPanel {
             CacheInfo cacheInfo = (CacheInfo) userObject;
             tabBar.addTab(cacheInfo.getId());
 
-            TabInfo selectedTabInfo = TabBar.getSelectionTabInfo();
+            TabInfo selectedTabInfo = tabBar.getSelectionTabInfo();
             if (selectedTabInfo != null) {
                 Tab component = (Tab) selectedTabInfo.getComponent();
                 DubboMethodEntity methodEntity = cacheInfo.getDubboMethodEntity();

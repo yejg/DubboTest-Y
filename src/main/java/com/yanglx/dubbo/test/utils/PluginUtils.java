@@ -136,7 +136,11 @@ public class PluginUtils {
             });
         }
 
-        TabInfo selectedInfo = TabBar.getSelectionTabInfo();
+        TabBar tabBar = TabBar.getInstance(project);
+        if (tabBar == null) {
+            return;
+        }
+        TabInfo selectedInfo = tabBar.getSelectionTabInfo();
         Tab component = (Tab) selectedInfo.getComponent();
         DubboSetingState settings = DubboSetingState.getInstance();
         List<CacheInfo> dubboConfigs = settings.getDubboConfigs();

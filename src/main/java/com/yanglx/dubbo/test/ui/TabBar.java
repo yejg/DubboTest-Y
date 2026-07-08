@@ -19,8 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TabBar extends JBEditorTabs implements TabsListener {
 
-    public static Map<String, TabInfo> tabsMap = new ConcurrentHashMap<>(32);
-    public static volatile String activeTabId;
+    private static final Map<Project, TabBar> instances = new ConcurrentHashMap<>();
+
+    private final Map<String, TabInfo> tabsMap = new ConcurrentHashMap<>(32);
+    private volatile String activeTabId;
     private final Project project;
     private final TreePanel leftTree;
 
@@ -28,10 +30,27 @@ public class TabBar extends JBEditorTabs implements TabsListener {
         super(project, IdeFocusManager.getInstance(project), project);
         this.project = project;
         this.leftTree = leftTree;
-        tabsMap = new ConcurrentHashMap<>();
+        if (project != null) {
+            instances.put(project, this);
+        }
         this.addListener(this);
         this.setTabDraggingEnabled(true);
         this.addTab();
+    }
+
+    public static @Nullable TabBar getInstance(@Nullable Project project) {
+        if (project == null) return null;
+        return instances.get(project);
+    }
+
+    public static java.util.Collection<TabBar> getAllInstances() {
+        return instances.values();
+    }
+
+    public static void removeInstance(@Nullable Project project) {
+        if (project != null) {
+            instances.remove(project);
+        }
     }
 
     public void addTab() {
@@ -74,7 +93,7 @@ public class TabBar extends JBEditorTabs implements TabsListener {
         activeTabId = tab.getId();
     }
 
-    public static TabInfo getSelectionTabInfo() {
+    public TabInfo getSelectionTabInfo() {
         return tabsMap.get(activeTabId);
     }
 

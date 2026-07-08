@@ -277,8 +277,7 @@ public class DubboPanel extends JBPanel implements Disposable {
                 if (StrUtils.isBlank(name)) {
                     name = dubboMethodEntity.getInterfaceName() + "#" + dubboMethodEntity.getMethodName();
                 }
-                String id = StrUtils.isBlank(dubboMethodEntity.getId()) ?
-                        UUID.randomUUID().toString() : dubboMethodEntity.getId();
+                String id = UUID.randomUUID().toString();
                 DubboSetingState.getInstance().add(
                         CacheInfo.of(id, name, dubboMethodEntity),
                         DubboSetingState.CacheType.COLLECTIONS
