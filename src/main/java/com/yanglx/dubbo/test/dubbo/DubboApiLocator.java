@@ -94,15 +94,9 @@ public class DubboApiLocator {
         ReferenceConfig<GenericService> referenceConfig = this.getReferenceConfig(dubboMethodEntity);
         ReferenceConfigCache cache = ReferenceConfigCache.getCache(CACHE_NAME, generator);
         GenericService genericService = cache.get(referenceConfig);
-        try {
-            return genericService.$invoke(dubboMethodEntity.getMethodName(),
-                    dubboMethodEntity.getMethodType(),
-                    dubboMethodEntity.getParam());
-        } catch (Exception e) {
-            referenceConfig.destroy();
-            cache.destroy(referenceConfig);
-            throw e;
-        }
+        return genericService.$invoke(dubboMethodEntity.getMethodName(),
+                dubboMethodEntity.getMethodType(),
+                dubboMethodEntity.getParam());
     }
 
     /**
