@@ -34,3 +34,5 @@ CLAUDE.md
 .codegraph/*
 .intellijPlatform/*
 
+doc/*
+
