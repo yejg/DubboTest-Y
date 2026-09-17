@@ -47,6 +47,11 @@ public class CacheInfo implements Serializable {
 
     private String name;
 
+    /**
+     * 简单描述, 仅收藏用。旧数据没有该节点, 反序列化后为 null
+     */
+    private String description;
+
     private String id;
 
     private Date date;
@@ -118,6 +123,26 @@ public class CacheInfo implements Serializable {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    /**
+     * 左侧树上显示用的名字。旧数据 name 可能为空, 回退到 方法名#接口名
+     *
+     * @return 显示名
+     */
+    public String getDisplayName() {
+        if (name != null && !name.isEmpty()) {
+            return name;
+        }
+        return methodName + "#" + interfaceName;
+    }
+
     public String getId() {
         return id;
     }
@@ -143,9 +168,14 @@ public class CacheInfo implements Serializable {
     }
 
     public static CacheInfo of(String id, String name, DubboMethodEntity dubboMethodEntity) {
+        return of(id, name, null, dubboMethodEntity);
+    }
+
+    public static CacheInfo of(String id, String name, String description, DubboMethodEntity dubboMethodEntity) {
         CacheInfo cacheInfo = new CacheInfo();
         cacheInfo.setId(id);
         cacheInfo.setName(name);
+        cacheInfo.setDescription(description);
         cacheInfo.setInterfaceName(dubboMethodEntity.getInterfaceName());
         cacheInfo.setMethodName(dubboMethodEntity.getMethodName());
         cacheInfo.setVersion(dubboMethodEntity.getVersion());

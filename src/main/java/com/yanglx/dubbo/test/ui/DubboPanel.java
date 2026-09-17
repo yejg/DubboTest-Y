@@ -33,7 +33,6 @@ public class DubboPanel extends JBPanel implements Disposable {
     private JButton invokeBtn;
     private JTextField interfaceNameTextField;
     private JLabel tip;
-    private JButton saveAsBtn;
     private JComboBox<CacheInfo> addressBox;
     private JTextField methodNameTextField;
     private JTextField timeoutTextField;
@@ -111,21 +110,13 @@ public class DubboPanel extends JBPanel implements Disposable {
         groupTextField = new JBTextField();
         topFormPanel.add(groupTextField, gbc);
 
-        // 1.4 保存按钮
+        // 1.4 保存按钮。原来的「另存为」已合并进保存弹框, 不再单独占位
         gbc.gridx = 8;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
         saveBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.save"));
         topFormPanel.add(saveBtn, gbc);
-
-        // 1.5 另存为 按钮
-        gbc.gridx = 9;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0;
-        saveAsBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.save-as"));
-        topFormPanel.add(saveAsBtn, gbc);
 
         // 2 InterfaceName行
         gbc.gridx = 0;
@@ -136,7 +127,7 @@ public class DubboPanel extends JBPanel implements Disposable {
 
         gbc.gridx = 1;
         gbc.gridy = 1;
-        gbc.gridwidth = 9;
+        gbc.gridwidth = 8;
         gbc.weightx = 1;
         interfaceNameTextField = new JBTextField();
         topFormPanel.add(interfaceNameTextField, gbc);
@@ -150,7 +141,7 @@ public class DubboPanel extends JBPanel implements Disposable {
 
         gbc.gridx = 1;
         gbc.gridy = 2;
-        gbc.gridwidth = 9;
+        gbc.gridwidth = 8;
         gbc.weightx = 1;
         methodNameTextField = new JBTextField();
         topFormPanel.add(methodNameTextField, gbc);
@@ -163,7 +154,7 @@ public class DubboPanel extends JBPanel implements Disposable {
         topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.timeout.seconds")), gbc);
         gbc.gridx = 1;
         gbc.gridy = 3;
-        gbc.gridwidth = 9;
+        gbc.gridwidth = 8;
         gbc.weightx = 1;
         timeoutTextField = new JBTextField(String.valueOf(PluginConstants.DEFAULT_TIMEOUT_SECOND));
         topFormPanel.add(timeoutTextField, gbc);
@@ -257,33 +248,44 @@ public class DubboPanel extends JBPanel implements Disposable {
             refreshDubboMethodEntity();
             if (isBlankEntity()) return;
 
-            String name = dubboMethodEntity.getMethodName() + "#" + dubboMethodEntity.getInterfaceName();
-            String id = StrUtils.isBlank(dubboMethodEntity.getId()) ?
-                    UUID.randomUUID().toString() : dubboMethodEntity.getId();
-            DubboSetingState.getInstance().add(
-                    CacheInfo.of(id, name, dubboMethodEntity),
+            DubboSetingState state = DubboSetingState.getInstance();
+            String currentId = dubboMethodEntity.getId();
+            CacheInfo existing = state.findCollectionById(currentId);
+
+            SaveDialogue.Mode mode = existing != null ? SaveDialogue.Mode.UPDATE : SaveDialogue.Mode.CREATE;
+            String initName = existing != null ? existing.getDisplayName() : defaultName();
+            String initDesc = existing != null ? existing.getDescription() : null;
+
+            SaveDialogue dialogue = new SaveDialogue(project, mode, initName, initDesc);
+            if (!dialogue.showAndGet()) return;
+
+            String name = StrUtils.isBlank(dialogue.getInputName()) ? defaultName() : dialogue.getInputName();
+            String description = dialogue.getInputDescription();
+
+            String targetId;
+            if (existing != null && !dialogue.isSaveAsNew()) {
+                // 更新已有条目, id 不变
+                targetId = currentId;
+            } else if (StrUtils.isBlank(currentId) || dialogue.isSaveAsNew()) {
+                // 新建, 或从已有条目另存出一份副本
+                targetId = UUID.randomUUID().toString();
+            } else {
+                // 从 History 双击过来: id 非空但收藏里没有, 沿用该 id 保持当前 Tab 一致
+                targetId = currentId;
+            }
+
+            // 回写 id, 否则接着再点保存会覆盖到原来那条
+            dubboMethodEntity.setId(targetId);
+            state.add(
+                    CacheInfo.of(targetId, name, description, dubboMethodEntity),
                     DubboSetingState.CacheType.COLLECTIONS
             );
-            leftTree.refresh();
-        });
-
-        saveAsBtn.addActionListener(e -> {
-            refreshDubboMethodEntity();
-            if (isBlankEntity()) return;
-
-            NameDialogue dialogue = new NameDialogue(project);
-            if (dialogue.showAndGet()) {
-                String name = dialogue.getText();
-                if (StrUtils.isBlank(name)) {
-                    name = dubboMethodEntity.getInterfaceName() + "#" + dubboMethodEntity.getMethodName();
-                }
-                String id = UUID.randomUUID().toString();
-                DubboSetingState.getInstance().add(
-                        CacheInfo.of(id, name, dubboMethodEntity),
-                        DubboSetingState.CacheType.COLLECTIONS
-                );
-                leftTree.refresh();
+            // 当前 Tab 的标题跟着新名字走
+            TabBar tabBar = TabBar.getInstance(project);
+            if (tabBar != null) {
+                tabBar.renameSelectedTab(name);
             }
+            leftTree.refresh();
         });
 
         // 地址下拉框事件
@@ -365,6 +367,11 @@ public class DubboPanel extends JBPanel implements Disposable {
                 || StrUtils.isBlank(dubboMethodEntity.getInterfaceName());
     }
 
+    /** 未自定义名字时的默认名, 与历史记录的命名保持一致 */
+    private String defaultName() {
+        return dubboMethodEntity.getMethodName() + "#" + dubboMethodEntity.getInterfaceName();
+    }
+
     // Getter方法保持不变
     public JPanel getMainPanel() {
         return mainPanel;
@@ -380,10 +387,6 @@ public class DubboPanel extends JBPanel implements Disposable {
 
     public JLabel getTip() {
         return tip;
-    }
-
-    public JButton getSaveAsBtn() {
-        return saveAsBtn;
     }
 
     public JComboBox<CacheInfo> getAddressBox() {

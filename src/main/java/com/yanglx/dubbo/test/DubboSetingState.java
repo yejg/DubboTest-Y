@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,6 +36,10 @@ public class DubboSetingState implements PersistentStateComponent<DubboSetingSta
     public List<CacheInfo> dubboConfigs = new ArrayList<>();
     //限制最大历史记录条数
     private static final int MAX_HISTORY_SIZE = 200;
+
+    /** 按日期倒序。旧版本存的条目可能缺 date, 用 nullsLast 兜住避免 NPE */
+    private static final Comparator<CacheInfo> BY_DATE_DESC =
+            Comparator.comparing(CacheInfo::getDate, Comparator.nullsLast(Comparator.reverseOrder()));
     /**
      * Gets address *
      *
@@ -43,12 +48,30 @@ public class DubboSetingState implements PersistentStateComponent<DubboSetingSta
      */
     public List<CacheInfo> getParamInfoCache(CacheType cacheType) {
         if (CacheType.COLLECTIONS.equals(cacheType)) {
-            paramInfoCacheList.sort((o1, o2) -> o2.getDate().compareTo(o1.getDate()));
+            paramInfoCacheList.sort(BY_DATE_DESC);
             return paramInfoCacheList;
         }else {
-            historyParamInfoCacheList.sort((o1, o2) -> o2.getDate().compareTo(o1.getDate()));
+            historyParamInfoCacheList.sort(BY_DATE_DESC);
             return historyParamInfoCacheList;
         }
+    }
+
+    /**
+     * 按 id 在收藏里查, 供保存时判断是更新已有条目还是新建
+     *
+     * @param id 条目 id
+     * @return 找到的条目, 没有则返回 null
+     */
+    public CacheInfo findCollectionById(String id) {
+        if (id == null || id.isEmpty()) {
+            return null;
+        }
+        for (CacheInfo cacheInfo : this.paramInfoCacheList) {
+            if (id.equals(cacheInfo.getId())) {
+                return cacheInfo;
+            }
+        }
+        return null;
     }
 
     public void setDubboConfigs(List<CacheInfo> cacheInfo){
