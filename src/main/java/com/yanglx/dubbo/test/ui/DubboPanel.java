@@ -429,8 +429,18 @@ public class DubboPanel extends JBPanel implements Disposable {
         return dubboMethodEntity;
     }
 
+    /**
+     * 由 Tab 通过 Disposer 级联触发。直接调用编辑器的 dispose 而非注册成子 Disposable,
+     * 是为了避开「已存在的根节点再改挂父节点」这种不确定语义
+     */
     @Override
     public void dispose() {
         executorService.shutdownNow();
+        if (jsonEditorReq != null) {
+            jsonEditorReq.dispose();
+        }
+        if (jsonEditorResp != null) {
+            jsonEditorResp.dispose();
+        }
     }
 }

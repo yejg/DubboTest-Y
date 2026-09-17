@@ -4,6 +4,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.tabs.TabInfo;
 import com.intellij.ui.tabs.TabsListener;
@@ -138,9 +139,34 @@ public class TabBar extends JBEditorTabs implements TabsListener {
     }
 
     public void closeTab(@NotNull String tabId) {
-        TabInfo tabInfo = tabsMap.get(tabId);
-        tabsMap.remove(tabId);
+        TabInfo tabInfo = tabsMap.remove(tabId);
+        if (tabInfo == null) {
+            // 原来没判空, removeTab(null) 会 NPE
+            return;
+        }
         this.removeTab(tabInfo);
+        disposeTabComponent(tabInfo);
+    }
+
+    /**
+     * 释放 Tab 持有的资源。不释放会漏掉两个 FileEditor 和一个线程池
+     */
+    private void disposeTabComponent(TabInfo tabInfo) {
+        if (tabInfo.getComponent() instanceof Tab) {
+            Disposer.dispose((Tab) tabInfo.getComponent());
+        }
+    }
+
+    /**
+     * 工具窗口关闭时释放全部 Tab, 并把自己从 static 缓存里摘掉。
+     * 不摘的话 instances 会一直持有 Project, 关掉项目后整个 Project 对象都泄漏
+     */
+    public void disposeAllTabs() {
+        for (TabInfo tabInfo : tabsMap.values()) {
+            disposeTabComponent(tabInfo);
+        }
+        tabsMap.clear();
+        removeInstance(this.project);
     }
 
 

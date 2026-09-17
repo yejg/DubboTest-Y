@@ -1,6 +1,7 @@
 package com.yanglx.dubbo.test.ui;
 
 import com.intellij.lang.Language;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileEditor;
@@ -22,7 +23,7 @@ import com.intellij.ui.components.panels.NonOpaquePanel;
  * @date 2021.02.20 15:57
  * @since 1.0.0
  */
-public class JsonEditor extends NonOpaquePanel {
+public class JsonEditor extends NonOpaquePanel implements Disposable {
     /** serialVersionUID */
     private static final long serialVersionUID = -871105152589937225L;
     /** Psi file */
@@ -31,6 +32,8 @@ public class JsonEditor extends NonOpaquePanel {
     private final Project project;
     /** 接口响应区域，防止用户编辑 */
     private boolean readOnly = false;
+    /** 持有引用以便释放。不释放会导致每个编辑器泄漏一个 EditorImpl */
+    private final FileEditor fileEditor;
 
     /**
      * Json editor
@@ -44,8 +47,19 @@ public class JsonEditor extends NonOpaquePanel {
         this.readOnly = readOnly;
         this.psiFile = this.createPsiFile();
         VirtualFile virtualFile = this.psiFile.getVirtualFile();
-        FileEditor fileEditor = this.createFileEditor(virtualFile);
-        this.add(fileEditor.getComponent(), "Center");
+        this.fileEditor = this.createFileEditor(virtualFile);
+        this.add(this.fileEditor.getComponent(), "Center");
+    }
+
+    /**
+     * 释放 FileEditor。由 {@link DubboPanel} 通过 Disposer 级联触发,
+     * 不释放会在 IDE 退出时报 "Memory leak detected: EditorImpl"
+     *
+     * @since 1.0.0
+     */
+    @Override
+    public void dispose() {
+        PsiAwareTextEditorProvider.getInstance().disposeEditor(this.fileEditor);
     }
 
     /**

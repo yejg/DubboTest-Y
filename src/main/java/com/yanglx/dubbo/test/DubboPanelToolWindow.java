@@ -38,6 +38,9 @@ public class DubboPanelToolWindow implements ToolWindowFactory {
         ToolBarPanel dubboPanel = new ToolBarPanel(project, toolWindow);
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(dubboPanel, null, false);
+        // 必须设 disposer, 否则 ToolBarPanel.dispose() 永远不会被调用,
+        // 面板里的编辑器、线程池和 TabBar 的 static 缓存都会一直泄漏
+        content.setDisposer(dubboPanel);
         toolWindow.getContentManager().addContent(content);
 
         // 后台预热 DubboBootstrap，避免首次调用卡顿

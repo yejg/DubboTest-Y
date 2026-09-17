@@ -96,8 +96,14 @@ public class ToolBarPanel extends SimpleToolWindowPanel implements Disposable {
         return actionToolbar.getComponent();
     }
 
+    /**
+     * 由 Content 的 disposer 触发(见 DubboPanelToolWindow)。
+     * 之前这里是空实现且没人调用, 导致每个 Tab 的编辑器和线程池都漏着
+     */
     @Override
     public void dispose() {
-
+        if (this.tabBar != null) {
+            this.tabBar.disposeAllTabs();
+        }
     }
 }
