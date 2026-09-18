@@ -59,6 +59,18 @@ public class CacheInfo implements Serializable {
     /** Timeout(second) */
     private int timeout = PluginConstants.DEFAULT_TIMEOUT_SECOND;
 
+    /**
+     * 所属收藏夹 id, null 表示根目录。仅收藏用, 历史记录不分组。
+     * 旧数据没有该节点, 反序列化后为 null, 正好落在根目录
+     */
+    private String folderId;
+
+    /**
+     * 同级内的排序位置, 由拖拽决定。
+     * 旧数据反序列化后全是 0, 由 {@code DubboSetingState} 首次读取时按日期倒序补齐
+     */
+    private int sortIndex;
+
     public String getInterfaceName() {
         return interfaceName;
     }
@@ -165,6 +177,22 @@ public class CacheInfo implements Serializable {
 
     public void setTimeout(int timeout) {
         this.timeout = timeout;
+    }
+
+    public String getFolderId() {
+        return folderId;
+    }
+
+    public void setFolderId(String folderId) {
+        this.folderId = folderId;
+    }
+
+    public int getSortIndex() {
+        return sortIndex;
+    }
+
+    public void setSortIndex(int sortIndex) {
+        this.sortIndex = sortIndex;
     }
 
     public static CacheInfo of(String id, String name, DubboMethodEntity dubboMethodEntity) {

@@ -276,10 +276,14 @@ public class DubboPanel extends JBPanel implements Disposable {
 
             // 回写 id, 否则接着再点保存会覆盖到原来那条
             dubboMethodEntity.setId(targetId);
-            state.add(
-                    CacheInfo.of(targetId, name, description, dubboMethodEntity),
-                    DubboSetingState.CacheType.COLLECTIONS
-            );
+            CacheInfo toSave = CacheInfo.of(targetId, name, description, dubboMethodEntity);
+            // 新条目落到左树当前选中的文件夹里; 更新已有条目时 state.add 会保住它原来的位置, 这里传的值不生效
+            if (existing != null && !dialogue.isSaveAsNew()) {
+                toSave.setFolderId(existing.getFolderId());
+            } else {
+                toSave.setFolderId(existing != null ? existing.getFolderId() : leftTree.getSelectedFolderId());
+            }
+            state.add(toSave, DubboSetingState.CacheType.COLLECTIONS);
             // 当前 Tab 的标题跟着新名字走
             TabBar tabBar = TabBar.getInstance(project);
             if (tabBar != null) {
