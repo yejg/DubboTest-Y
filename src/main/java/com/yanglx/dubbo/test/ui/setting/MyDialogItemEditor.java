@@ -56,8 +56,6 @@ public class MyDialogItemEditor implements TableModelEditor.DialogItemEditor<MyC
 
     @Override
     public void applyEdited(@NotNull MyConfigurableDubboSettings oldItem, @NotNull MyConfigurableDubboSettings newItem) {
-        System.out.println("=====================applyEdited=====================");
-
     }
 
     @Override

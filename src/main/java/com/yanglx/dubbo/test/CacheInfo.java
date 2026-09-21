@@ -47,12 +47,29 @@ public class CacheInfo implements Serializable {
 
     private String name;
 
+    /**
+     * 简单描述, 仅收藏用。旧数据没有该节点, 反序列化后为 null
+     */
+    private String description;
+
     private String id;
 
     private Date date;
 
     /** Timeout(second) */
     private int timeout = PluginConstants.DEFAULT_TIMEOUT_SECOND;
+
+    /**
+     * 所属收藏夹 id, null 表示根目录。仅收藏用, 历史记录不分组。
+     * 旧数据没有该节点, 反序列化后为 null, 正好落在根目录
+     */
+    private String folderId;
+
+    /**
+     * 同级内的排序位置, 由拖拽决定。
+     * 旧数据反序列化后全是 0, 由 {@code DubboSetingState} 首次读取时按日期倒序补齐
+     */
+    private int sortIndex;
 
     public String getInterfaceName() {
         return interfaceName;
@@ -118,6 +135,26 @@ public class CacheInfo implements Serializable {
         this.name = name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    /**
+     * 左侧树上显示用的名字。旧数据 name 可能为空, 回退到 方法名#接口名
+     *
+     * @return 显示名
+     */
+    public String getDisplayName() {
+        if (name != null && !name.isEmpty()) {
+            return name;
+        }
+        return methodName + "#" + interfaceName;
+    }
+
     public String getId() {
         return id;
     }
@@ -142,10 +179,31 @@ public class CacheInfo implements Serializable {
         this.timeout = timeout;
     }
 
+    public String getFolderId() {
+        return folderId;
+    }
+
+    public void setFolderId(String folderId) {
+        this.folderId = folderId;
+    }
+
+    public int getSortIndex() {
+        return sortIndex;
+    }
+
+    public void setSortIndex(int sortIndex) {
+        this.sortIndex = sortIndex;
+    }
+
     public static CacheInfo of(String id, String name, DubboMethodEntity dubboMethodEntity) {
+        return of(id, name, null, dubboMethodEntity);
+    }
+
+    public static CacheInfo of(String id, String name, String description, DubboMethodEntity dubboMethodEntity) {
         CacheInfo cacheInfo = new CacheInfo();
         cacheInfo.setId(id);
         cacheInfo.setName(name);
+        cacheInfo.setDescription(description);
         cacheInfo.setInterfaceName(dubboMethodEntity.getInterfaceName());
         cacheInfo.setMethodName(dubboMethodEntity.getMethodName());
         cacheInfo.setVersion(dubboMethodEntity.getVersion());
@@ -186,6 +244,12 @@ public class CacheInfo implements Serializable {
 
     @Override
     public String toString() {
+        if (name == null || name.isEmpty()) {
+            return address != null ? address : "";
+        }
+        if (address != null && !address.isEmpty()) {
+            return name + " - " + address;
+        }
         return name;
     }
 
@@ -194,7 +258,7 @@ public class CacheInfo implements Serializable {
         if (this == o) return true;
         if (!(o instanceof CacheInfo)) return false;
         CacheInfo cacheInfo = (CacheInfo) o;
-        return id.equals(cacheInfo.id);
+        return Objects.equals(id, cacheInfo.id);
     }
 
     @Override

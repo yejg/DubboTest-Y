@@ -11,7 +11,6 @@ import com.yanglx.dubbo.test.PluginConstants;
 import com.yanglx.dubbo.test.dubbo.DubboApiLocator;
 import com.yanglx.dubbo.test.dubbo.DubboMethodEntity;
 import com.yanglx.dubbo.test.utils.JsonUtils;
-import com.yanglx.dubbo.test.utils.PluginUtils;
 import com.yanglx.dubbo.test.utils.StrUtils;
 
 import javax.swing.*;
@@ -21,19 +20,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.intellij.openapi.Disposable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class DubboPanel extends JBPanel {
+public class DubboPanel extends JBPanel implements Disposable {
     private static final long serialVersionUID = -8541227582365214834L;
 
     private JPanel mainPanel;
     private JButton invokeBtn;
     private JTextField interfaceNameTextField;
     private JLabel tip;
-    private JButton saveAsBtn;
     private JComboBox<CacheInfo> addressBox;
     private JTextField methodNameTextField;
     private JTextField timeoutTextField;
@@ -111,21 +110,13 @@ public class DubboPanel extends JBPanel {
         groupTextField = new JBTextField();
         topFormPanel.add(groupTextField, gbc);
 
-        // 1.4 保存按钮
+        // 1.4 保存按钮。原来的「另存为」已合并进保存弹框, 不再单独占位
         gbc.gridx = 8;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
         saveBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.save"));
         topFormPanel.add(saveBtn, gbc);
-
-        // 1.5 另存为 按钮
-        gbc.gridx = 9;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0;
-        saveAsBtn = new JButton(DubboTestBundle.message("dubbo-test.tool.save-as"));
-        topFormPanel.add(saveAsBtn, gbc);
 
         // 2 InterfaceName行
         gbc.gridx = 0;
@@ -136,7 +127,7 @@ public class DubboPanel extends JBPanel {
 
         gbc.gridx = 1;
         gbc.gridy = 1;
-        gbc.gridwidth = 9;
+        gbc.gridwidth = 8;
         gbc.weightx = 1;
         interfaceNameTextField = new JBTextField();
         topFormPanel.add(interfaceNameTextField, gbc);
@@ -150,7 +141,7 @@ public class DubboPanel extends JBPanel {
 
         gbc.gridx = 1;
         gbc.gridy = 2;
-        gbc.gridwidth = 9;
+        gbc.gridwidth = 8;
         gbc.weightx = 1;
         methodNameTextField = new JBTextField();
         topFormPanel.add(methodNameTextField, gbc);
@@ -163,7 +154,7 @@ public class DubboPanel extends JBPanel {
         topFormPanel.add(new JLabel(DubboTestBundle.message("dubbo-test.tool.timeout.seconds")), gbc);
         gbc.gridx = 1;
         gbc.gridy = 3;
-        gbc.gridwidth = 9;
+        gbc.gridwidth = 8;
         gbc.weightx = 1;
         timeoutTextField = new JBTextField(String.valueOf(PluginConstants.DEFAULT_TIMEOUT_SECOND));
         topFormPanel.add(timeoutTextField, gbc);
@@ -217,7 +208,13 @@ public class DubboPanel extends JBPanel {
                     DubboSetingState.CacheType.HISTORY
             );
             leftTree.refresh();
-            jsonEditorResp.setText("");
+
+            String runText = DubboTestBundle.message("dubbo-test.tool.run");
+            String loadingText = DubboTestBundle.message("dubbo-test.invoking.tooltip");
+
+            invokeBtn.setEnabled(false);
+            invokeBtn.setText(loadingText);
+            jsonEditorResp.setText(loadingText);
 
             // 异步调用Dubbo
             Future<Object> submit = executorService.submit(() ->
@@ -229,12 +226,20 @@ public class DubboPanel extends JBPanel {
                 long start = System.currentTimeMillis();
                 try {
                     Object result = submit.get(dubboMethodEntity.getTimeout(), TimeUnit.SECONDS);
-                    jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
-                    tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
+                    SwingUtilities.invokeLater(() -> {
+                        jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
+                        tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
+                        invokeBtn.setText(runText);
+                        invokeBtn.setEnabled(true);
+                    });
                 } catch (Exception ex) {
                     String error = ex.getMessage() != null ? ex.getMessage() : ex.toString();
-                    jsonEditorResp.setText(error);
-                    tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
+                    SwingUtilities.invokeLater(() -> {
+                        jsonEditorResp.setText(error);
+                        tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
+                        invokeBtn.setText(runText);
+                        invokeBtn.setEnabled(true);
+                    });
                 }
             });
         });
@@ -243,34 +248,48 @@ public class DubboPanel extends JBPanel {
             refreshDubboMethodEntity();
             if (isBlankEntity()) return;
 
-            String name = dubboMethodEntity.getMethodName() + "#" + dubboMethodEntity.getInterfaceName();
-            String id = StrUtils.isBlank(dubboMethodEntity.getId()) ?
-                    UUID.randomUUID().toString() : dubboMethodEntity.getId();
-            DubboSetingState.getInstance().add(
-                    CacheInfo.of(id, name, dubboMethodEntity),
-                    DubboSetingState.CacheType.COLLECTIONS
-            );
-            leftTree.refresh();
-        });
+            DubboSetingState state = DubboSetingState.getInstance();
+            String currentId = dubboMethodEntity.getId();
+            CacheInfo existing = state.findCollectionById(currentId);
 
-        saveAsBtn.addActionListener(e -> {
-            refreshDubboMethodEntity();
-            if (isBlankEntity()) return;
+            SaveDialogue.Mode mode = existing != null ? SaveDialogue.Mode.UPDATE : SaveDialogue.Mode.CREATE;
+            String initName = existing != null ? existing.getDisplayName() : defaultName();
+            String initDesc = existing != null ? existing.getDescription() : null;
 
-            NameDialogue dialogue = new NameDialogue(project);
-            if (dialogue.showAndGet()) {
-                String name = dialogue.getText();
-                if (StrUtils.isBlank(name)) {
-                    name = dubboMethodEntity.getInterfaceName() + "#" + dubboMethodEntity.getMethodName();
-                }
-                String id = StrUtils.isBlank(dubboMethodEntity.getId()) ?
-                        UUID.randomUUID().toString() : dubboMethodEntity.getId();
-                DubboSetingState.getInstance().add(
-                        CacheInfo.of(id, name, dubboMethodEntity),
-                        DubboSetingState.CacheType.COLLECTIONS
-                );
-                leftTree.refresh();
+            SaveDialogue dialogue = new SaveDialogue(project, mode, initName, initDesc);
+            if (!dialogue.showAndGet()) return;
+
+            String name = StrUtils.isBlank(dialogue.getInputName()) ? defaultName() : dialogue.getInputName();
+            String description = dialogue.getInputDescription();
+
+            String targetId;
+            if (existing != null && !dialogue.isSaveAsNew()) {
+                // 更新已有条目, id 不变
+                targetId = currentId;
+            } else if (StrUtils.isBlank(currentId) || dialogue.isSaveAsNew()) {
+                // 新建, 或从已有条目另存出一份副本
+                targetId = UUID.randomUUID().toString();
+            } else {
+                // 从 History 双击过来: id 非空但收藏里没有, 沿用该 id 保持当前 Tab 一致
+                targetId = currentId;
             }
+
+            // 回写 id, 否则接着再点保存会覆盖到原来那条
+            dubboMethodEntity.setId(targetId);
+            CacheInfo toSave = CacheInfo.of(targetId, name, description, dubboMethodEntity);
+            // 新条目落到左树当前选中的文件夹里; 更新已有条目时 state.add 会保住它原来的位置, 这里传的值不生效
+            if (existing != null && !dialogue.isSaveAsNew()) {
+                toSave.setFolderId(existing.getFolderId());
+            } else {
+                toSave.setFolderId(existing != null ? existing.getFolderId() : leftTree.getSelectedFolderId());
+            }
+            state.add(toSave, DubboSetingState.CacheType.COLLECTIONS);
+            // 当前 Tab 的标题跟着新名字走
+            TabBar tabBar = TabBar.getInstance(project);
+            if (tabBar != null) {
+                tabBar.renameSelectedTab(name);
+            }
+            leftTree.refresh();
         });
 
         // 地址下拉框事件
@@ -352,6 +371,11 @@ public class DubboPanel extends JBPanel {
                 || StrUtils.isBlank(dubboMethodEntity.getInterfaceName());
     }
 
+    /** 未自定义名字时的默认名, 与历史记录的命名保持一致 */
+    private String defaultName() {
+        return dubboMethodEntity.getMethodName() + "#" + dubboMethodEntity.getInterfaceName();
+    }
+
     // Getter方法保持不变
     public JPanel getMainPanel() {
         return mainPanel;
@@ -367,10 +391,6 @@ public class DubboPanel extends JBPanel {
 
     public JLabel getTip() {
         return tip;
-    }
-
-    public JButton getSaveAsBtn() {
-        return saveAsBtn;
     }
 
     public JComboBox<CacheInfo> getAddressBox() {
@@ -411,5 +431,20 @@ public class DubboPanel extends JBPanel {
 
     public DubboMethodEntity getDubboMethodEntity() {
         return dubboMethodEntity;
+    }
+
+    /**
+     * 由 Tab 通过 Disposer 级联触发。直接调用编辑器的 dispose 而非注册成子 Disposable,
+     * 是为了避开「已存在的根节点再改挂父节点」这种不确定语义
+     */
+    @Override
+    public void dispose() {
+        executorService.shutdownNow();
+        if (jsonEditorReq != null) {
+            jsonEditorReq.dispose();
+        }
+        if (jsonEditorResp != null) {
+            jsonEditorResp.dispose();
+        }
     }
 }

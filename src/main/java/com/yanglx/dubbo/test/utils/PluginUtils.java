@@ -105,6 +105,9 @@ public class PluginUtils {
      */
     public static void openToolWindow(Project project, PsiElement element) {
         PsiMethod psiMethod = getPsiMethod(element);
+        if (psiMethod == null) {
+            return;
+        }
 
         PsiParameterList parameterList = psiMethod.getParameterList();
         PsiJavaFile javaFile = (PsiJavaFile) psiMethod.getContainingFile();
@@ -133,7 +136,11 @@ public class PluginUtils {
             });
         }
 
-        TabInfo selectedInfo = TabBar.getSelectionTabInfo();
+        TabBar tabBar = TabBar.getInstance(project);
+        if (tabBar == null) {
+            return;
+        }
+        TabInfo selectedInfo = tabBar.getSelectionTabInfo();
         Tab component = (Tab) selectedInfo.getComponent();
         DubboSetingState settings = DubboSetingState.getInstance();
         List<CacheInfo> dubboConfigs = settings.getDubboConfigs();

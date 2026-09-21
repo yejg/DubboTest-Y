@@ -3,11 +3,12 @@ plugins {
     id('org.jetbrains.intellij') version '1.13.3'
 }
 
-group = group
-version = version
+// group / version 取自 gradle.properties, Gradle 会自动应用到 project, 无需在此赋值
 
-sourceCompatibility = javaVersion
-targetCompatibility = javaVersion
+java {
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+}
 
 repositories {
     maven { url 'https://maven.aliyun.com/repository/public/' }
@@ -17,10 +18,26 @@ repositories {
 
 intellij {
     pluginName = name
-    version = ideaVersion
     plugins = ['com.intellij.java']
     // 禁用自动 instrumentation
     instrumentCode = false
+
+    // 默认按 gradle.properties 里的 ideaVersion 下载 IDE。
+    // 若设了 DUBBOTEST_IDEA_HOME 且路径存在, 就改用已装的 IDEA, 省掉每次 1~2G 下载。
+    // 优先用专属变量, 是为了不跟 JetBrains 启动器自己读的 IDEA_HOME 相互干扰;
+    // IDEA_HOME 仅作兜底, 方便本来就设了它的人开箱可用。
+    // 注意两点:
+    //   1. 该变量一旦设置, 上面的 ideaVersion 就被忽略, 升级 IDEA 后记得同步更新变量指向;
+    //   2. 若指向的是 IU(Ultimate), 编译目标即为 IU 而非 IC, 两者 API 不完全等价,
+    //      发版前务必跑 runPluginVerifier 做字节码级校验。
+    def ideaHome = System.getenv("DUBBOTEST_IDEA_HOME") ?: System.getenv("IDEA_HOME")
+    if (ideaHome && new File(ideaHome).exists()) {
+        localPath = ideaHome
+        logger.lifecycle("[intellij] 编译目标: 本机 IDEA ${ideaHome}")
+    } else {
+        version = ideaVersion
+        logger.lifecycle("[intellij] 编译目标: 将按 ideaVersion=${ideaVersion} 下载 IDE")
+    }
 }
 
 dependencies {
@@ -38,6 +55,14 @@ dependencies {
 }
 
 tasks {
+    buildSearchableOptions {
+        enabled = false
+    }
+
+    initializeIntelliJPlugin {
+        selfUpdateCheck = false
+    }
+
     runIde {
         jvmArgs '--add-exports', 'java.base/jdk.internal.vm=ALL-UNNAMED' , '-Duser.language=en', '-Duser.country=US'
         autoReloadPlugins = true
@@ -47,11 +72,28 @@ tasks {
         pluginDescription = file('includes/pluginDescription.html').text
         changeNotes = file('includes/pluginChanges.html').text
         sinceBuild = '222.3345.118'
-        untilBuild = "253.*"
+        untilBuild = "262.*"
     }
 
     publishPlugin {
         token = System.getenv("publishToken")
         channels = System.getenv("publishChannels")
+    }
+
+    // 跨版本 API 兼容性检查。untilBuild 只是声明, 真实兼容性要靠这个任务做字节码级校验。
+    // 这里只列本机已缓存的版本, 避免每次校验都去下载好几个 G 的 IDE。
+    // 校验用的 IDE 默认缓存在 user.home/.cache/pluginVerifier, 想换位置(比如 C 盘紧张)不要改这里,
+    // 在本机的 GRADLE_USER_HOME/gradle.properties 里加一行即可, 该文件不入库:
+    //   systemProp.plugin.verifier.home.dir=<你的路径>
+    // 实际 IDE 存放于 <该路径>/ides/<type>-<version>, 目录内的 markerFile 是"已就绪"标记, 命中则跳过下载。
+    runPluginVerifier {
+        ideVersions = [
+                'IC-2022.2',    // 最低支持版本
+                'IC-2023.2',
+                'IC-2024.3',
+                'IC-2025.1'
+        ]
+        // 不因问题中断, 先把所有版本的报告都跑出来
+        failureLevel = org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel.NONE
     }
 }

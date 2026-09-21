@@ -27,3 +27,12 @@ gradle-app.setting
 package
 
 forMyself.md
+
+CLAUDE.md
+
+.claude/*
+.codegraph/*
+.intellijPlatform/*
+
+doc/*
+

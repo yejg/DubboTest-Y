@@ -91,22 +91,36 @@ public class MyConfigurableDubboSettings {
     }
 
     public void setConfig(String name, String address, String version, String group) {
-        String protocol = address.substring(0, address.indexOf("://"));
-        String ip = address.substring(address.indexOf("://") + 3, address.lastIndexOf(":"));
-        String port = address.substring(address.lastIndexOf(":") + 1);
-        this.ip = ip;
-        this.protocol = protocol;
-        this.port = port;
         this.version = version;
         this.group = group;
         this.name = name;
+
+        if (address == null || !address.contains("://") || !address.contains(":")) {
+            this.protocol = "";
+            this.ip = "";
+            this.port = "";
+            return;
+        }
+
+        int protocolEnd = address.indexOf("://");
+        int lastColon = address.lastIndexOf(":");
+        if (lastColon <= protocolEnd + 2) {
+            this.protocol = "";
+            this.ip = "";
+            this.port = "";
+            return;
+        }
+
+        this.protocol = address.substring(0, protocolEnd);
+        this.ip = address.substring(protocolEnd + 3, lastColon);
+        this.port = address.substring(lastColon + 1);
     }
 
     public String getProcessedAddress() {
         if (StrUtils.isNotBlank(this.protocol) && StrUtils.isNotBlank(this.ip) && StrUtils.isNotBlank(this.port)) {
             return this.protocol + "://" + this.ip + ":" + this.port;
         } else {
-            return null;
+            return "";
         }
     }
 }
