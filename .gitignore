@@ -28,6 +28,9 @@ package
 
 forMyself.md
 
+# WorkBuddy 项目记忆, 纯本地笔记, 不入库
+.workbuddy/
+
 CLAUDE.md
 
 .claude/*

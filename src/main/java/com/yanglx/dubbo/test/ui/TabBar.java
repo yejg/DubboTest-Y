@@ -172,6 +172,11 @@ public class TabBar extends JBEditorTabs implements TabsListener {
 
     @Override
     public void selectionChanged(TabInfo oldSelection, TabInfo newSelection) {
+        // newSelection 在最后一个 Tab 被移除时平台会传 null, 原来没判空会 NPE
+        if (newSelection == null) {
+            activeTabId = null;
+            return;
+        }
         Tab tab = (Tab) newSelection.getComponent();
         tab.getDubboPanel().reset();
         activeTabId = tab.getId();
