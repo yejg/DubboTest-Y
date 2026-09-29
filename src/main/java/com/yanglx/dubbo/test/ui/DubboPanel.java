@@ -24,10 +24,13 @@ import com.intellij.openapi.Disposable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class DubboPanel extends JBPanel implements Disposable {
     private static final long serialVersionUID = -8541227582365214834L;
+    private static final com.intellij.openapi.diagnostic.Logger LOGGER =
+            com.intellij.openapi.diagnostic.Logger.getInstance(DubboPanel.class);
 
     private JPanel mainPanel;
     private JButton invokeBtn;
@@ -216,32 +219,40 @@ public class DubboPanel extends JBPanel implements Disposable {
             invokeBtn.setText(loadingText);
             jsonEditorResp.setText(loadingText);
 
-            // 异步调用Dubbo
-            Future<Object> submit = executorService.submit(() ->
-                    new DubboApiLocator().invoke(dubboMethodEntity)
-            );
+            // 异步调用Dubbo。关闭 Tab 会触发 dispose() -> executorService.shutdownNow(),
+            // 若正好在调用未返回时关闭, submit 会抛 RejectedExecutionException;
+            // 该异常发生在 EDT 的 ActionListener 里且原来没有捕获, 会被抛到事件分发循环。
+            try {
+                Future<Object> submit = executorService.submit(() ->
+                        new DubboApiLocator().invoke(dubboMethodEntity)
+                );
 
-            // 处理响应结果
-            executorService.submit(() -> {
-                long start = System.currentTimeMillis();
-                try {
-                    Object result = submit.get(dubboMethodEntity.getTimeout(), TimeUnit.SECONDS);
-                    SwingUtilities.invokeLater(() -> {
-                        jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
-                        tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
-                        invokeBtn.setText(runText);
-                        invokeBtn.setEnabled(true);
-                    });
-                } catch (Exception ex) {
-                    String error = ex.getMessage() != null ? ex.getMessage() : ex.toString();
-                    SwingUtilities.invokeLater(() -> {
-                        jsonEditorResp.setText(error);
-                        tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
-                        invokeBtn.setText(runText);
-                        invokeBtn.setEnabled(true);
-                    });
-                }
-            });
+                // 处理响应结果
+                executorService.submit(() -> {
+                    long start = System.currentTimeMillis();
+                    try {
+                        Object result = submit.get(dubboMethodEntity.getTimeout(), TimeUnit.SECONDS);
+                        SwingUtilities.invokeLater(() -> {
+                            jsonEditorResp.setText(JsonUtils.toPrettyJSONString(result));
+                            tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start));
+                            invokeBtn.setText(runText);
+                            invokeBtn.setEnabled(true);
+                        });
+                    } catch (Exception ex) {
+                        String error = ex.getMessage() != null ? ex.getMessage() : ex.toString();
+                        SwingUtilities.invokeLater(() -> {
+                            jsonEditorResp.setText(error);
+                            tip.setText(DubboTestBundle.message("dubbo-test.invoke.cost.time") + (System.currentTimeMillis() - start) + " (error)");
+                            invokeBtn.setText(runText);
+                            invokeBtn.setEnabled(true);
+                        });
+                    }
+                });
+            } catch (RejectedExecutionException ex) {
+                // 线程池已关闭(Tab 正在关闭), 静默恢复按钮状态即可, 无需报错
+                invokeBtn.setText(runText);
+                invokeBtn.setEnabled(true);
+            }
         });
 
         saveBtn.addActionListener(e -> {
@@ -325,6 +336,9 @@ public class DubboPanel extends JBPanel implements Disposable {
                 dubboMethodEntity.setMethodType(new String[]{});
             }
         } catch (Exception e) {
+            // 原来静默吞掉异常直接清空参数, 用户手改 JSON 写错格式时会在不知情的情况下
+            // 保存/调用了空参数。这里补一条日志, 至少排查时能看到原因
+            LOGGER.warn("解析请求参数 JSON 失败, 已按空参数处理: " + e.getMessage(), e);
             dubboMethodEntity.setParam(new Object[]{});
             dubboMethodEntity.setMethodType(new String[]{});
         }
